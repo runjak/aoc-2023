@@ -1,7 +1,7 @@
 use std::{error::Error, fs};
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let paths = ["./inputs/01/example.txt", "./inputs/01/input.txt"];
+    let paths = ["./inputs/01/example-1.txt", "./inputs/01/input.txt"];
 
     for path in paths {
         let file = fs::read_to_string(path)?;
