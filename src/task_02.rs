@@ -87,11 +87,42 @@ fn maximum_drawing(a: &Drawing, b: &Drawing) -> Drawing {
         .collect::<Drawing>();
 }
 
+fn drawing_power(drawing: &Drawing) -> u32 {
+    return drawing.values().product();
+}
+
+fn second() -> Result<(), Box<dyn Error>> {
+    let paths = ["./inputs/02/example-1.txt", "./inputs/02/input.txt"];
+
+    for path in paths {
+        println!("Reading file {}", path);
+        let file = fs::read_to_string(path)?;
+
+        let games = file.lines().filter_map(parse_game);
+
+        let sum: u32 = games
+            .map(|(game_id, drawings)| -> u32 {
+                // Failing to reduce here :(
+                let upper_bounds = drawings
+                    .iter()
+                    .reduce(maximum_drawing)
+                    .unwrap_or(&HashMap::new());
+
+                return drawing_power(upper_bounds);
+            })
+            .sum();
+
+        println!("Sum is {}", sum);
+    }
+
+    Ok(())
+}
+
 pub fn main() -> Result<(), Box<dyn Error>> {
     println!("02-1:");
     first()?;
-
-    Ok(())
+    println!("02-2:");
+    return second();
 }
 
 #[cfg(test)]
