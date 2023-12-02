@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, fs};
+use std::{cmp, collections::HashMap, error::Error, fs};
 
 type Drawing = HashMap<String, u32>;
 type Game = (u32, Vec<Drawing>);
@@ -68,6 +68,23 @@ fn first() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+fn maximum_drawing(a: &Drawing, b: &Drawing) -> Drawing {
+    return a
+        .keys()
+        .chain(b.keys())
+        .map(|k| -> (String, u32) {
+            let z = match (a.get(k), b.get(k)) {
+                (Some(x), Some(y)) => *cmp::max(x, y),
+                (Some(x), None) => *x,
+                (None, Some(y)) => *y,
+                (None, None) => 0,
+            };
+
+            return (k.clone(), z);
+        })
+        .collect::<Drawing>();
 }
 
 pub fn main() -> Result<(), Box<dyn Error>> {
