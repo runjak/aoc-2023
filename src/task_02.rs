@@ -101,14 +101,10 @@ fn second() -> Result<(), Box<dyn Error>> {
         let games = file.lines().filter_map(parse_game);
 
         let sum: u32 = games
-            .map(|(game_id, drawings)| -> u32 {
-                // Failing to reduce here :(
-                let upper_bounds = drawings
-                    .iter()
-                    .reduce(maximum_drawing)
-                    .unwrap_or(&HashMap::new());
+            .map(|(_game_id, drawings)| -> u32 {
+                let upper_bounds = drawings.iter().fold(HashMap::new(), |a,b| maximum_drawing(&a, b));
 
-                return drawing_power(upper_bounds);
+                return drawing_power(&upper_bounds);
             })
             .sum();
 
