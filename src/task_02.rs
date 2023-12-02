@@ -13,11 +13,10 @@ fn parse_game(line: &str) -> Option<Game> {
     // We identify the id and drawing parts of a game:
     let game_parts = line[prefix.len()..].split(": ").collect::<Vec<_>>();
     let game_id = game_parts.get(0)?.parse::<u32>().ok()?;
-    let drawing_strings = game_parts.get(1)?.split("; ").collect::<Vec<_>>();
+    let drawing_strings = game_parts.get(1)?.split("; ");
 
     // We parse the drawings:
     let drawings: Vec<Drawing> = drawing_strings
-        .iter()
         .map(|drawing| -> Drawing {
             return drawing
                 .split(", ")
@@ -51,7 +50,7 @@ fn first() -> Result<(), Box<dyn Error>> {
         println!("Reading file {}", path);
         let file = fs::read_to_string(path)?;
 
-        let games: Vec<_> = file.lines().filter_map(parse_game).collect();
+        let games = file.lines().filter_map(parse_game);
 
         // 12 red cubes, 13 green cubes, and 14
         let limits: Drawing = HashMap::from([
@@ -61,7 +60,6 @@ fn first() -> Result<(), Box<dyn Error>> {
         ]);
 
         let sum: u32 = games
-            .iter()
             .filter(|(_, drawings)| game_was_possible(drawings, &limits))
             .map(|(game_id, _)| game_id)
             .sum();
