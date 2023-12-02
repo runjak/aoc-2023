@@ -27,7 +27,7 @@ fn first() -> Result<(), Box<dyn Error>> {
 }
 
 fn find_digits(line: &str) -> Vec<u32> {
-    let cases: Vec<(&str, usize)> = Vec::from([
+    let cases: Vec<(&str, u32)> = Vec::from([
         ("0", 0),
         ("1", 1),
         ("2", 2),
@@ -56,7 +56,7 @@ fn find_digits(line: &str) -> Vec<u32> {
     while line.len() > 0 {
         for (prefix, digit) in &cases {
             if line.starts_with(*prefix) {
-                digits.push(digit);
+                digits.push(*digit);
                 break;
             }
         }
@@ -64,7 +64,7 @@ fn find_digits(line: &str) -> Vec<u32> {
         line = &line[1..];
     }
 
-    return Vec::new();
+    return digits;
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
@@ -90,6 +90,8 @@ fn second() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn main() -> Result<(), Box<dyn Error>> {
+    println!("01-1:");
     first()?;
+    println!("01-2:");
     second()
 }
