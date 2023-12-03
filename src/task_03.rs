@@ -207,9 +207,57 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn second() -> Result<(), Box<dyn Error>> {
+    let paths = ["./inputs/03/example-1.txt", "./inputs/03/input.txt"];
+
+    for path in paths {
+        println!("File {}:", path);
+        let contents = fs::read_to_string(path)?;
+        let schematic = parse_schematic(contents);
+
+        let gears = schematic
+            .symbols
+            .iter()
+            .filter(|symbol| symbol.label == "*");
+
+        let gear_part_numbers = gears
+            .map(|gear| {
+                let gear_neighbours = neighbours(&gear.coordinates);
+
+                let adjacent_part_numbers: Vec<_> = schematic
+                    .part_numbers
+                    .iter()
+                    .filter(|part_number| {
+                        part_number.coordinates.iter().any(|part_coordinate| {
+                            gear_neighbours.iter().any(|gear_neighbour_coordinate| {
+                                part_coordinate == gear_neighbour_coordinate
+                            })
+                        })
+                    })
+                    .collect();
+
+                return adjacent_part_numbers;
+            })
+            .filter(|adjacent_part_numbers| adjacent_part_numbers.len() == 2);
+
+        let gear_ratios = gear_part_numbers.map(|part_numbers| {
+            part_numbers
+                .iter()
+                .map(|part_number| part_number.number)
+                .product::<u32>()
+        });
+
+        println!("Sum of gear ratios: {}", gear_ratios.sum::<u32>());
+    }
+
+    Ok(())
+}
+
 pub fn main() -> Result<(), Box<dyn Error>> {
     println!("03-1:");
-    first()
+    first()?;
+    println!("03-2:");
+    second()
 }
 
 #[cfg(test)]
