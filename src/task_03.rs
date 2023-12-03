@@ -10,8 +10,8 @@ use std::{error::Error, fs};
 
 #[derive(Clone, PartialEq, Debug)]
 struct Coordinate {
-    line_index: usize,
-    char_index: usize,
+    line_index: i32,
+    char_index: i32,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -86,8 +86,8 @@ fn parse_schematic(input: String) -> Schematic {
                     Symbol {
                         label: label.to_string(),
                         coordinates: Vec::from([Coordinate {
-                            line_index,
-                            char_index: *char_index,
+                            line_index: line_index.try_into().unwrap(),
+                            char_index: (*char_index).try_into().unwrap(),
                         }]),
                     }
                 })
@@ -112,8 +112,8 @@ fn parse_schematic(input: String) -> Schematic {
                         .iter()
                         .map(|(char_index, _)| -> Coordinate {
                             Coordinate {
-                                line_index,
-                                char_index: *char_index,
+                                line_index: line_index.try_into().unwrap(),
+                                char_index: (*char_index).try_into().unwrap(),
                             }
                         })
                         .collect(),
@@ -128,6 +128,49 @@ fn parse_schematic(input: String) -> Schematic {
         part_numbers: part_numbers_per_line.concat(),
         symbols: symbols_per_line.concat(),
     }
+}
+
+fn neighbours(coordinates: Vec<Coordinate>) -> Vec<Coordinate> {
+    coordinates
+        .iter()
+        .flat_map(|center| {
+            Vec::from([
+                Coordinate {
+                    line_index: center.line_index - 1,
+                    char_index: center.char_index - 1,
+                },
+                Coordinate {
+                    line_index: center.line_index - 1,
+                    char_index: center.char_index,
+                },
+                Coordinate {
+                    line_index: center.line_index - 1,
+                    char_index: center.char_index + 1,
+                },
+                Coordinate {
+                    line_index: center.line_index,
+                    char_index: center.char_index - 1,
+                },
+                Coordinate {
+                    line_index: center.line_index,
+                    char_index: center.char_index + 1,
+                },
+                Coordinate {
+                    line_index: center.line_index + 1,
+                    char_index: center.char_index - 1,
+                },
+                Coordinate {
+                    line_index: center.line_index + 1,
+                    char_index: center.char_index,
+                },
+                Coordinate {
+                    line_index: center.line_index + 1,
+                    char_index: center.char_index + 1,
+                },
+            ])
+        })
+        .filter(|candidate| coordinates.iter().all(|existing| candidate != existing))
+        .collect()
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
@@ -154,7 +197,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::{error::Error, fs};
 
-    use crate::task_03::{parse_schematic, Coordinate, PartNumber, Schematic, Symbol};
+    use crate::task_03::{neighbours, parse_schematic, Coordinate, PartNumber, Schematic, Symbol};
 
     #[test]
     fn should_parse_example_as_expected() -> Result<(), Box<dyn Error>> {
@@ -394,5 +437,89 @@ mod tests {
         assert_eq!(actual, expected);
 
         Ok(())
+    }
+
+    #[test]
+    fn neighbours_should_be_empty_for_an_empty_list() {
+        assert_eq!(neighbours(Vec::new()), Vec::new());
+    }
+
+    #[test]
+    fn neighbours_should_be_as_expected() {
+        let expected = [
+            Coordinate {
+                line_index: -1,
+                char_index: 0,
+            },
+            Coordinate {
+                line_index: -1,
+                char_index: 1,
+            },
+            Coordinate {
+                line_index: -1,
+                char_index: 2,
+            },
+            Coordinate {
+                line_index: 0,
+                char_index: 0,
+            },
+            Coordinate {
+                line_index: 1,
+                char_index: 0,
+            },
+            Coordinate {
+                line_index: 1,
+                char_index: 1,
+            },
+            Coordinate {
+                line_index: 1,
+                char_index: 2,
+            },
+            Coordinate {
+                line_index: -1,
+                char_index: 1,
+            },
+            Coordinate {
+                line_index: -1,
+                char_index: 2,
+            },
+            Coordinate {
+                line_index: -1,
+                char_index: 3,
+            },
+            Coordinate {
+                line_index: 0,
+                char_index: 3,
+            },
+            Coordinate {
+                line_index: 1,
+                char_index: 1,
+            },
+            Coordinate {
+                line_index: 1,
+                char_index: 2,
+            },
+            Coordinate {
+                line_index: 1,
+                char_index: 3,
+            },
+        ]
+        .to_vec();
+
+        let actual = neighbours(
+            [
+                Coordinate {
+                    line_index: 0,
+                    char_index: 1,
+                },
+                Coordinate {
+                    line_index: 0,
+                    char_index: 2,
+                },
+            ]
+            .to_vec(),
+        );
+
+        assert_eq!(actual, expected);
     }
 }
