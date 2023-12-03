@@ -1,5 +1,13 @@
 use std::{error::Error, fs};
 
+/*
+ * Despite my intention to use structs in a Haskell-like manner
+ * with structural equality and immutability
+ * it appeared that I required Clone to get concat() to work.
+ *
+ * I'd love to better understand the underlying situation here and how to clean it up.
+ */
+
 #[derive(Clone, PartialEq, Debug)]
 struct Coordinate {
     line_index: usize,
@@ -24,6 +32,18 @@ struct Schematic {
     symbols: Vec<Symbol>,
 }
 
+/*
+ * span_digit_parts is a helper function for parse_schematic.
+ *
+ * The intention is to aid in grouping digit_parts for the construction of the part_numbers of a Schematic.
+ * digit_parts are given as a alice of tuples of char_index and char for a line.
+ * span_digit_parts is not concerned with filtering out chars by character class,
+ * but instead only looks at the char_index and cuts when there's a hole between indices.
+ *
+ * The return value is a tuple of the first consecutive run of digits, followed by remaining digits (to be cut later).
+ *
+ * I'd have prefered something like a group_by here, but did not manage to get that working.
+ */
 fn span_digit_parts(digit_parts: &[(usize, char)]) -> (&[(usize, char)], &[(usize, char)]) {
     if digit_parts.len() < 2 {
         return (digit_parts, &[]);
@@ -134,7 +154,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::{error::Error, fs};
 
-    use crate::task_03::{PartNumber,parse_schematic, Schematic, Coordinate, Symbol};
+    use crate::task_03::{parse_schematic, Coordinate, PartNumber, Schematic, Symbol};
 
     #[test]
     fn should_parse_example_as_expected() -> Result<(), Box<dyn Error>> {
@@ -157,7 +177,8 @@ mod tests {
                             line_index: 0,
                             char_index: 2,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 114,
@@ -174,7 +195,8 @@ mod tests {
                             line_index: 0,
                             char_index: 7,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 35,
@@ -187,7 +209,8 @@ mod tests {
                             line_index: 2,
                             char_index: 3,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 633,
@@ -204,7 +227,8 @@ mod tests {
                             line_index: 2,
                             char_index: 8,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 617,
@@ -221,7 +245,8 @@ mod tests {
                             line_index: 4,
                             char_index: 2,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 58,
@@ -234,7 +259,8 @@ mod tests {
                             line_index: 5,
                             char_index: 8,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 592,
@@ -251,7 +277,8 @@ mod tests {
                             line_index: 6,
                             char_index: 4,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 755,
@@ -268,7 +295,8 @@ mod tests {
                             line_index: 7,
                             char_index: 8,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 664,
@@ -285,7 +313,8 @@ mod tests {
                             line_index: 9,
                             char_index: 3,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
                 PartNumber {
                     number: 598,
@@ -302,53 +331,62 @@ mod tests {
                             line_index: 9,
                             char_index: 7,
                         },
-                    ].to_vec(),
+                    ]
+                    .to_vec(),
                 },
-            ].to_vec(),
+            ]
+            .to_vec(),
             symbols: [
                 Symbol {
                     label: "*".to_owned(),
                     coordinates: [Coordinate {
                         line_index: 1,
                         char_index: 3,
-                    }].to_vec(),
+                    }]
+                    .to_vec(),
                 },
                 Symbol {
                     label: "#".to_owned(),
                     coordinates: [Coordinate {
                         line_index: 3,
                         char_index: 6,
-                    }].to_vec(),
+                    }]
+                    .to_vec(),
                 },
                 Symbol {
                     label: "*".to_owned(),
                     coordinates: [Coordinate {
                         line_index: 4,
                         char_index: 3,
-                    }].to_vec(),
+                    }]
+                    .to_vec(),
                 },
                 Symbol {
                     label: "+".to_owned(),
                     coordinates: [Coordinate {
                         line_index: 5,
                         char_index: 5,
-                    }].to_vec(),
+                    }]
+                    .to_vec(),
                 },
                 Symbol {
                     label: "$".to_owned(),
                     coordinates: [Coordinate {
                         line_index: 8,
                         char_index: 3,
-                    }].to_vec(),
+                    }]
+                    .to_vec(),
                 },
                 Symbol {
                     label: "*".to_owned(),
                     coordinates: [Coordinate {
                         line_index: 8,
                         char_index: 5,
-                    }].to_vec(),
+                    }]
+                    .to_vec(),
                 },
-            ].to_vec(),
+            ]
+            .to_vec(),
         };
 
         let actual = parse_schematic(example_data);
