@@ -130,7 +130,7 @@ fn parse_schematic(input: String) -> Schematic {
     }
 }
 
-fn neighbours(coordinates: Vec<Coordinate>) -> Vec<Coordinate> {
+fn neighbours(coordinates: &Vec<Coordinate>) -> Vec<Coordinate> {
     coordinates
         .iter()
         .flat_map(|center| {
@@ -179,10 +179,29 @@ fn first() -> Result<(), Box<dyn Error>> {
     for path in paths {
         println!("File {}:", path);
         let contents = fs::read_to_string(path)?;
+        let schematic = parse_schematic(contents);
 
-        println!("{}", contents);
+        let symbol_coordinates: Vec<_> = schematic
+            .symbols
+            .iter()
+            .flat_map(|symbol| symbol.coordinates.iter())
+            .collect();
 
-        break;
+        let part_numbers_with_symbol = schematic.part_numbers.iter().filter(|part_number| {
+            let neighbour_coordinates = neighbours(&part_number.coordinates);
+
+            return neighbour_coordinates.iter().any(|neighbour_coordinate| {
+                symbol_coordinates
+                    .iter()
+                    .any(|symbol_coordinate| neighbour_coordinate == *symbol_coordinate)
+            });
+        });
+
+        let sum: u32 = part_numbers_with_symbol
+            .map(|part_number| part_number.number)
+            .sum();
+
+        println!("Sum of part numbers with symbols: {}", sum);
     }
 
     Ok(())
@@ -441,7 +460,7 @@ mod tests {
 
     #[test]
     fn neighbours_should_be_empty_for_an_empty_list() {
-        assert_eq!(neighbours(Vec::new()), Vec::new());
+        assert_eq!(neighbours(&Vec::new()), Vec::new());
     }
 
     #[test]
@@ -507,7 +526,7 @@ mod tests {
         .to_vec();
 
         let actual = neighbours(
-            [
+            &[
                 Coordinate {
                     line_index: 0,
                     char_index: 1,
