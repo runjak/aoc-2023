@@ -1,7 +1,7 @@
 use regex::Regex;
 use std::{error::Error, fs};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Card {
     id: u32,
     wins: Vec<u32>,
@@ -9,7 +9,7 @@ struct Card {
 }
 
 fn parse_card(line: &str) -> Option<Card> {
-    let card_regex = Regex::new(r"Card +(?<id>[0-9]+):(?<wins>[0-9 ]+)|(?<gots>[0-9 ]+)^$").ok()?;
+    let card_regex = Regex::new(r"Card\s+(?<id>\d+):(?<wins>[\d\s]+)\|(?<gots>[\d\s]+)").ok()?;
 
     let captures = card_regex.captures(line)?;
 
@@ -54,4 +54,24 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     first()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_card, Card};
+
+    #[test]
+    fn parse_card_should_parse_the_first_example() {
+        let example = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53";
+
+        let expected = Some(Card {
+            id: 1,
+            wins: [41, 48, 83, 86, 17].to_vec(),
+            gots: [83, 86, 6, 31, 17, 9, 48, 53].to_vec(),
+        });
+
+        let actual = parse_card(example);
+
+        assert_eq!(actual, expected)
+    }
 }
