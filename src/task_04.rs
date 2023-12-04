@@ -30,14 +30,17 @@ fn parse_card(line: &str) -> Option<Card> {
     Some(Card { id, wins, gots })
 }
 
-fn card_value(card: &Card) -> u32 {
-    let winning_count = card
-        .gots
+fn count_matching_values(card: &Card) -> u32 {
+    card.gots
         .iter()
         .filter(|got| card.wins.iter().any(|win| win == *got))
         .count()
         .try_into()
-        .unwrap_or(0);
+        .unwrap_or(0)
+}
+
+fn card_value(card: &Card) -> u32 {
+    let winning_count = count_matching_values(card);
 
     if winning_count == 0 {
         return 0;
