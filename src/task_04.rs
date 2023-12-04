@@ -30,6 +30,22 @@ fn parse_card(line: &str) -> Option<Card> {
     Some(Card { id, wins, gots })
 }
 
+fn card_value(card: &Card) -> u32 {
+    let winning_count = card
+        .gots
+        .iter()
+        .filter(|got| card.wins.iter().any(|win| win == *got))
+        .count()
+        .try_into()
+        .unwrap_or(0);
+
+    if winning_count == 0 {
+        return 0;
+    }
+
+    2_u32.pow(winning_count - 1)
+}
+
 pub fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/04/example-1.txt", "./inputs/04/input.txt"];
 
@@ -58,7 +74,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_card, Card};
+    use super::{card_value, parse_card, Card};
 
     #[test]
     fn parse_card_should_parse_the_first_example() {
@@ -73,5 +89,16 @@ mod tests {
         let actual = parse_card(example);
 
         assert_eq!(actual, expected)
+    }
+
+    #[test]
+    fn card_value_should_match_example_calculation() {
+        let card = Card {
+            id: 1,
+            wins: [41, 48, 83, 86, 17].to_vec(),
+            gots: [83, 86, 6, 31, 17, 9, 48, 53].to_vec(),
+        };
+
+        assert_eq!(card_value(&card), 8)
     }
 }
