@@ -83,9 +83,7 @@ fn count_cards(cards: Vec<Card>) -> u32 {
             .try_into()
             .unwrap_or_default();
         for card_index in 0..matching_values {
-            let (card, card_count) = cards_and_counts[card_index];
-
-            cards_and_counts[card_index] = (card, card_count);
+            cards_and_counts[card_index].1 += first_card_count;
         }
     }
 
@@ -102,7 +100,6 @@ pub fn second() -> Result<(), Box<dyn Error>> {
         let cards = contents.lines().flat_map(parse_card).collect::<Vec<_>>();
 
         println!("Number of cards won: {}", count_cards(cards));
-        break;
     }
 
     Ok(())
