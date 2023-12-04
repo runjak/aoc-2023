@@ -66,9 +66,53 @@ pub fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// Count cards and instances as per the second puzzle of the task
+fn count_cards(cards: Vec<Card>) -> u32 {
+    let mut total_cards: u32 = 0;
+
+    let mut cards_and_counts = cards.iter().map(|card| (card, 1_u32)).collect::<Vec<_>>();
+    let mut cards_and_counts: &mut [(&Card, u32)] = &mut cards_and_counts[..];
+
+    while cards_and_counts.len() > 0 {
+        let (first_card, first_card_count) = cards_and_counts[0];
+        cards_and_counts = &mut cards_and_counts[1..];
+
+        total_cards += first_card_count;
+
+        let matching_values: usize = count_matching_values(first_card)
+            .try_into()
+            .unwrap_or_default();
+        for card_index in 0..matching_values {
+            let (card, card_count) = cards_and_counts[card_index];
+
+            cards_and_counts[card_index] = (card, card_count);
+        }
+    }
+
+    return total_cards;
+}
+
+pub fn second() -> Result<(), Box<dyn Error>> {
+    let paths = ["./inputs/04/example-1.txt", "./inputs/04/input.txt"];
+
+    for path in paths {
+        println!("Reading file {}.", path);
+        let contents = fs::read_to_string(path)?;
+
+        let cards = contents.lines().flat_map(parse_card).collect::<Vec<_>>();
+
+        println!("Number of cards won: {}", count_cards(cards));
+        break;
+    }
+
+    Ok(())
+}
+
 pub fn main() -> Result<(), Box<dyn Error>> {
     println!("04-1:");
     first()?;
+    println!("04-2:");
+    second()?;
 
     Ok(())
 }
