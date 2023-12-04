@@ -53,13 +53,11 @@ pub fn first() -> Result<(), Box<dyn Error>> {
         println!("Reading file {}.", path);
         let contents = fs::read_to_string(path)?;
 
-        println!("{}", contents);
+        let cards = contents.lines().flat_map(parse_card);
 
-        let cards = contents.lines().flat_map(parse_card).collect::<Vec<_>>();
+        let sum = cards.map(|card| card_value(&card)).sum::<u32>();
 
-        println!("Got cards: {:?}", cards);
-
-        break;
+        println!("Sum of card values: {}", sum);
     }
 
     Ok(())
