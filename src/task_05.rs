@@ -67,6 +67,26 @@ fn parse_task_input(input: String) -> Option<TaskInput> {
     })
 }
 
+fn map_seed(seed: u32, category_map: &CategoryMap) -> u32 {
+    let mapping = category_map
+        .mappings
+        .iter()
+        .filter(|(source, _destination, length)| *source <= seed && seed <= *source + *length)
+        .next();
+
+    match mapping {
+        None => seed,
+        Some((source, destination, _length)) => destination + (seed - source),
+    }
+}
+
+fn map_seeds(seeds: Vec<u32>, category_map: &CategoryMap) -> Vec<u32> {
+    seeds
+        .iter()
+        .map(|seed| map_seed(*seed, category_map))
+        .collect()
+}
+
 pub fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/05/example-1.txt", "./inputs/05/input.txt"];
 
@@ -76,7 +96,18 @@ pub fn first() -> Result<(), Box<dyn Error>> {
         let contents = fs::read_to_string(path)?;
         let task_input = parse_task_input(contents).unwrap();
 
-        println!("{:?}", task_input);
+        let locations = task_input
+            .category_maps
+            .iter()
+            .fold(task_input.seeds, |seeds, category_map| {
+                map_seeds(seeds, category_map)
+            });
+
+        println!("Locations: {:?}", locations);
+
+        let lowest_location = locations.iter().min().unwrap_or(&0);
+
+        println!("Lowest location: {}", lowest_location);
 
         break;
     }
@@ -89,4 +120,25 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     first()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::task_05::map_seed;
+
+    use super::CategoryMap;
+
+    #[test]
+    fn map_seed_should_behave() {
+        let category_map = &CategoryMap {
+            from: "seed".to_string(),
+            to: "soil".to_string(),
+            mappings: [(50, 98, 2), (52, 50, 48)].to_vec(),
+        };
+
+        assert_eq!(map_seed(79, category_map), 81);
+        assert_eq!(map_seed(14, category_map), 14);
+        assert_eq!(map_seed(55, category_map), 47);
+        assert_eq!(map_seed(13, category_map), 13);
+    }
 }
