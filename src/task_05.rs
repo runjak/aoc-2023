@@ -111,16 +111,51 @@ pub fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn map_seed_range(seed_range: (i64, i64), category_map: &CategoryMap) -> Vec<(i64, i64)> {
+    Vec::new()
+}
+
+pub fn second() -> Result<(), Box<dyn Error>> {
+    let paths = ["./inputs/05/example-1.txt", "./inputs/05/input.txt"];
+
+    for path in paths {
+        println!("Reading file {}", path);
+
+        let contents = fs::read_to_string(path)?;
+        let task_input = parse_task_input(contents).unwrap();
+
+        let seed_chunks = task_input
+            .seeds
+            .chunks(2)
+            .filter_map(|chunk| -> Option<(i64, i64)> {
+                let [a, b] = chunk else {
+                    return None;
+                };
+
+                Some((*a, *b))
+            })
+            .collect::<Vec<_>>();
+
+        println!("seed_chunks: {:?}", seed_chunks);
+
+        break;
+    }
+
+    Ok(())
+}
+
 pub fn main() -> Result<(), Box<dyn Error>> {
     println!("05-1:");
     first()?;
+    println!("05-2:");
+    second()?;
 
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::task_05::map_seed;
+    use crate::task_05::{map_seed, map_seed_range};
 
     use super::CategoryMap;
 
@@ -136,5 +171,21 @@ mod tests {
         assert_eq!(map_seed(14, category_map), 14);
         assert_eq!(map_seed(55, category_map), 57);
         assert_eq!(map_seed(13, category_map), 13);
+    }
+
+    #[test]
+    fn map_seed_range_should_behave() {
+        let category_map = &CategoryMap {
+            from: "seed".to_string(),
+            to: "soil".to_string(),
+            mappings: [(50, 98, 2), (52, 50, 48)].to_vec(),
+        };
+
+        assert_eq!(map_seed_range((79, 14), category_map), [(79, 14)].to_vec());
+        assert_eq!(map_seed_range((55, 13), category_map), [(57, 13)].to_vec());
+        assert_eq!(
+            map_seed_range((48, 5), category_map),
+            [(48, 2), (52, 3)].to_vec()
+        );
     }
 }
