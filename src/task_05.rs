@@ -112,7 +112,87 @@ pub fn first() -> Result<(), Box<dyn Error>> {
 }
 
 fn map_seed_range(seed_range: (i64, i64), category_map: &CategoryMap) -> Vec<(i64, i64)> {
-    Vec::new()
+    let mappings = &mut category_map.mappings.clone();
+    mappings.sort_by(|(_, source_a, _), (_, source_b, _)| source_a.cmp(source_b));
+
+    let (mut seed_start, mut seed_length) = seed_range;
+
+    let mut mapped_ranges: Vec<(i64, i64)> = mappings
+        .iter()
+        .flat_map(
+            |(destination, source_start, mapping_length)| -> Vec<(i64, i64)> {
+                let seed_end = seed_start + seed_length - 1;
+                let source_end = source_start + mapping_length - 1;
+
+                // No seed range present to map
+                if seed_length <= 0 {
+                    return Vec::new();
+                }
+
+                // Seed range entirely later than current mapping
+                if seed_start > source_end {
+                    return Vec::new();
+                }
+
+                // Seed range entirely before source
+                if seed_end < *source_start {
+                    let result = [(seed_start, seed_length)].to_vec();
+                    seed_length = 0;
+                    return result;
+                }
+
+                let seed_starts_before_mapping = seed_start < *source_start;
+                let seed_ends_after_mapping = seed_end > source_end;
+
+                match (seed_starts_before_mapping, seed_ends_after_mapping) {
+                    (true, true) => {
+                        // seed range overlapping mapping entirely
+                        let before_length = source_start - seed_start;
+                        let before_mapping = (seed_start, before_length);
+                        seed_length -= before_length;
+
+                        let inner_mapping = (*destination, *mapping_length);
+                        seed_start = source_start + mapping_length;
+                        seed_length -= mapping_length;
+
+                        return [before_mapping, inner_mapping].to_vec();
+                    }
+                    (true, false) => {
+                        // seed range precedes mapping range, but doesn't continue after
+                        let before_length = source_start - seed_start;
+                        let before_mapping = (seed_start, before_length);
+                        seed_length -= before_length;
+
+                        let inner_mapping = (*destination, seed_length);
+                        seed_length = 0;
+
+                        return [before_mapping, inner_mapping].to_vec();
+                    }
+                    (false, true) => {
+                        // seed range starts inside mapping range and continues after
+
+                        let inner_length = mapping_length - (seed_start - *source_start);
+                        let inner_mapping = (*destination, inner_length);
+                        seed_length -= inner_length;
+
+                        return [inner_mapping].to_vec();
+                    }
+                    (false, false) => {
+                        // seed range entirely contained
+                        let result = [(seed_start, seed_length)].to_vec();
+                        seed_length = 0;
+                        return result;
+                    }
+                }
+            },
+        )
+        .collect();
+
+    if seed_length > 0 {
+        mapped_ranges.push((seed_start, seed_length))
+    }
+
+    return mapped_ranges;
 }
 
 pub fn second() -> Result<(), Box<dyn Error>> {
@@ -133,12 +213,22 @@ pub fn second() -> Result<(), Box<dyn Error>> {
                 };
 
                 Some((*a, *b))
-            })
+            });
+
+        let seeds = seed_chunks
+            .flat_map(|(from, length)| -> Vec<i64> { (from..from + length).collect() })
             .collect::<Vec<_>>();
 
-        println!("seed_chunks: {:?}", seed_chunks);
+        let locations = task_input
+            .category_maps
+            .iter()
+            .fold(seeds, |seeds, category_map| {
+                map_seeds(seeds, category_map)
+            });
 
-        break;
+        let lowest_location = locations.iter().min().unwrap_or(&0);
+
+        println!("lowest valid location: {}", lowest_location);
     }
 
     Ok(())
