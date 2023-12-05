@@ -3,13 +3,20 @@ mod task_01;
 mod task_02;
 mod task_03;
 mod task_04;
+mod task_05;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args()
         .filter_map(|arg| arg.parse::<usize>().ok())
         .collect();
 
-    let tasks = Vec::from([task_01::main, task_02::main, task_03::main, task_04::main]);
+    let tasks = Vec::from([
+        task_01::main,
+        task_02::main,
+        task_03::main,
+        task_04::main,
+        task_05::main,
+    ]);
 
     match args.first() {
         None => {
