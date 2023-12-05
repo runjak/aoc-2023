@@ -5,16 +5,16 @@ use std::{error::Error, fs};
 struct CategoryMap {
     from: String,
     to: String,
-    mappings: Vec<(i32, i32, i32)>,
+    mappings: Vec<(i64, i64, i64)>,
 }
 
 #[derive(Debug, PartialEq)]
 struct TaskInput {
-    seeds: Vec<i32>,
+    seeds: Vec<i64>,
     category_maps: Vec<CategoryMap>,
 }
 
-fn parse_seeds(line: &str) -> Vec<i32> {
+fn parse_seeds(line: &str) -> Vec<i64> {
     let prefix = "seeds: ";
 
     if !line.starts_with(prefix) {
@@ -23,7 +23,7 @@ fn parse_seeds(line: &str) -> Vec<i32> {
 
     line[prefix.len()..]
         .split(" ")
-        .filter_map(|digits| digits.parse::<i32>().ok())
+        .filter_map(|digits| digits.parse::<i64>().ok())
         .collect()
 }
 
@@ -38,10 +38,10 @@ fn parse_category_map(lines: &str) -> Option<CategoryMap> {
     let to = captures.name("to")?.as_str().to_string();
 
     let mappings = lines
-        .filter_map(|line| -> Option<(i32, i32, i32)> {
+        .filter_map(|line| -> Option<(i64, i64, i64)> {
             let numbers = line
                 .split(" ")
-                .filter_map(|digits| digits.parse::<i32>().ok())
+                .filter_map(|digits| digits.parse::<i64>().ok())
                 .collect::<Vec<_>>();
 
             let [x, y, z] = numbers.as_slice() else {
@@ -67,7 +67,7 @@ fn parse_task_input(input: String) -> Option<TaskInput> {
     })
 }
 
-fn map_seed(seed: i32, category_map: &CategoryMap) -> i32 {
+fn map_seed(seed: i64, category_map: &CategoryMap) -> i64 {
     let mapping = category_map
         .mappings
         .iter()
@@ -80,7 +80,7 @@ fn map_seed(seed: i32, category_map: &CategoryMap) -> i32 {
     }
 }
 
-fn map_seeds(seeds: Vec<i32>, category_map: &CategoryMap) -> Vec<i32> {
+fn map_seeds(seeds: Vec<i64>, category_map: &CategoryMap) -> Vec<i64> {
     seeds
         .iter()
         .map(|seed| map_seed(*seed, category_map))
@@ -103,13 +103,9 @@ pub fn first() -> Result<(), Box<dyn Error>> {
                 map_seeds(seeds, category_map)
             });
 
-        println!("Locations: {:?}", locations);
-
         let lowest_location = locations.iter().min().unwrap_or(&0);
 
         println!("Lowest location: {}", lowest_location);
-
-        break;
     }
 
     Ok(())
