@@ -5,16 +5,16 @@ use std::{error::Error, fs};
 struct CategoryMap {
     from: String,
     to: String,
-    mappings: Vec<(u32, u32, u32)>,
+    mappings: Vec<(i32, i32, i32)>,
 }
 
 #[derive(Debug, PartialEq)]
 struct TaskInput {
-    seeds: Vec<u32>,
+    seeds: Vec<i32>,
     category_maps: Vec<CategoryMap>,
 }
 
-fn parse_seeds(line: &str) -> Vec<u32> {
+fn parse_seeds(line: &str) -> Vec<i32> {
     let prefix = "seeds: ";
 
     if !line.starts_with(prefix) {
@@ -23,7 +23,7 @@ fn parse_seeds(line: &str) -> Vec<u32> {
 
     line[prefix.len()..]
         .split(" ")
-        .filter_map(|digits| digits.parse::<u32>().ok())
+        .filter_map(|digits| digits.parse::<i32>().ok())
         .collect()
 }
 
@@ -38,10 +38,10 @@ fn parse_category_map(lines: &str) -> Option<CategoryMap> {
     let to = captures.name("to")?.as_str().to_string();
 
     let mappings = lines
-        .filter_map(|line| -> Option<(u32, u32, u32)> {
+        .filter_map(|line| -> Option<(i32, i32, i32)> {
             let numbers = line
                 .split(" ")
-                .filter_map(|digits| digits.parse::<u32>().ok())
+                .filter_map(|digits| digits.parse::<i32>().ok())
                 .collect::<Vec<_>>();
 
             let [x, y, z] = numbers.as_slice() else {
@@ -67,20 +67,20 @@ fn parse_task_input(input: String) -> Option<TaskInput> {
     })
 }
 
-fn map_seed(seed: u32, category_map: &CategoryMap) -> u32 {
+fn map_seed(seed: i32, category_map: &CategoryMap) -> i32 {
     let mapping = category_map
         .mappings
         .iter()
-        .filter(|(source, _destination, length)| *source <= seed && seed <= *source + *length)
+        .filter(|(_destination, source, length)| seed >= *source && seed < *source + *length)
         .next();
 
     match mapping {
         None => seed,
-        Some((source, destination, _length)) => destination + (seed - source),
+        Some((destination, source, _length)) => destination + (seed - source),
     }
 }
 
-fn map_seeds(seeds: Vec<u32>, category_map: &CategoryMap) -> Vec<u32> {
+fn map_seeds(seeds: Vec<i32>, category_map: &CategoryMap) -> Vec<i32> {
     seeds
         .iter()
         .map(|seed| map_seed(*seed, category_map))
@@ -138,7 +138,7 @@ mod tests {
 
         assert_eq!(map_seed(79, category_map), 81);
         assert_eq!(map_seed(14, category_map), 14);
-        assert_eq!(map_seed(55, category_map), 47);
+        assert_eq!(map_seed(55, category_map), 57);
         assert_eq!(map_seed(13, category_map), 13);
     }
 }
