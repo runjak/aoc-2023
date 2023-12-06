@@ -6,14 +6,14 @@ struct Race {
     distance: i32,
 }
 
-fn parse_input(contents: String) -> Option<Vec<Race>> {
+fn parse_input(contents: String) -> Vec<Race> {
     let lines = contents.lines().collect::<Vec<_>>();
     let [line1, line2] = lines.as_slice() else {
-        return None;
+        return Vec::new();
     };
 
     if !line1.starts_with("Time:") || !line2.starts_with("Distance:") {
-        return None;
+        return Vec::new();
     }
 
     let times = line1
@@ -23,12 +23,25 @@ fn parse_input(contents: String) -> Option<Vec<Race>> {
         .split(" ")
         .filter_map(|token| token.parse::<i32>().ok());
 
-    Some(
-        times
-            .zip(distances)
-            .map(|(time, distance)| Race { time, distance })
-            .collect(),
-    )
+    times
+        .zip(distances)
+        .map(|(time, distance)| Race { time, distance })
+        .collect()
+}
+
+fn count_ways_to_beat(race: &Race) -> i32 {
+    let mut count = 0;
+
+    for speed in 0..race.time {
+        let remaining_time = race.time - speed;
+        let distance = remaining_time * speed;
+
+        if distance > race.distance {
+            count += 1;
+        }
+    }
+
+    return count;
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
@@ -38,9 +51,8 @@ fn first() -> Result<(), Box<dyn Error>> {
         let contents = fs::read_to_string(path)?;
         let races = parse_input(contents);
 
-        println!("{:?}", races);
-
-        break;
+        let solution = races.iter().map(count_ways_to_beat).product::<i32>();
+        println!("Product of winnable races: {}", solution);
     }
 
     Ok(())
