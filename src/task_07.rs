@@ -134,6 +134,10 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn fill_jokers(hand:&Hand) -> Hand {
+    // FIXME fun here for second task
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
     println!("To be implemented.");
 
