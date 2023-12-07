@@ -106,11 +106,20 @@ fn first() -> Result<(), Box<dyn Error>> {
         let contents = fs::read_to_string(path)?;
         let mut hands = parse_hands(contents);
 
-        println!("Got hands: {:?}", hands);
-
         hands.sort_by(compare_hands);
 
-        break;
+        let sum = hands
+            .iter()
+            .enumerate()
+            .map(|(rank, hand)| {
+                let rank = rank + 1;
+                hand.bet * i32::try_from(rank).unwrap()
+            })
+            .sum::<i32>();
+
+        println!("{}", sum);
+
+        // break;
     }
 
     Ok(())
