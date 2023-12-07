@@ -112,16 +112,16 @@ fn first() -> Result<(), Box<dyn Error>> {
 
         hands.sort_by(compare_hands);
 
-        let sum = hands
-            .iter()
+        let bets = hands.iter().map(|hand| hand.bet);
+        let total_winnings = bets
             .enumerate()
-            .map(|(rank, hand)| {
+            .map(|(rank, bet)| {
                 let rank = rank + 1;
-                hand.bet * i32::try_from(rank).unwrap()
+                bet * i32::try_from(rank).unwrap()
             })
             .sum::<i32>();
 
-        println!("{}", sum);
+        println!("{}", total_winnings);
 
         // break;
     }
