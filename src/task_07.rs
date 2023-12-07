@@ -82,6 +82,17 @@ fn hand_value(hand: &Hand) -> u8 {
     }
 }
 
+fn cmp_hands_by_cards(hand1: &Hand, hand2: &Hand) -> Ordering {
+    let mut card_order = hand1
+        .cards
+        .iter()
+        .zip(hand2.cards.iter())
+        .map(|(card1, card2)| card1.cmp(card2))
+        .filter(|order| order != &Ordering::Equal);
+
+    return card_order.next().unwrap_or(Ordering::Equal);
+}
+
 fn compare_hands(hand1: &Hand, hand2: &Hand) -> Ordering {
     let hand_order = hand_value(&hand1).cmp(&hand_value(&hand2));
 
@@ -89,14 +100,7 @@ fn compare_hands(hand1: &Hand, hand2: &Hand) -> Ordering {
         return hand_order;
     }
 
-    let mut card_order = hand1
-        .cards
-        .iter()
-        .zip(hand2.cards.iter())
-        .map(|(c1, c2)| c1.cmp(c2))
-        .filter(|order| order != &Ordering::Equal);
-
-    return card_order.next().unwrap_or(Ordering::Equal);
+    return cmp_hands_by_cards(hand1, hand2);
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
