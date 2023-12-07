@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, error::Error, fs};
+use std::{cmp::Ordering, collections::HashMap, error::Error, fs};
 
 type Card = i32;
 
@@ -49,7 +49,19 @@ fn parse_hands(contents: String) -> Vec<Hand> {
         .collect()
 }
 
-fn hand_value(hand: Hand) -> u8 {
+fn hand_value(hand: &Hand) -> u8 {
+    let mut card_counts: HashMap<Card, u8> = HashMap::new();
+    for card in hand.cards.iter() {
+        card_counts.insert(*card, card_counts.get(card).unwrap_or(&0) + 1);
+    }
+
+    let first_group = card_counts.values().max().unwrap_or(&0);
+    let second_group = card_counts
+        .values()
+        .filter(|x| x < &first_group)
+        .max()
+        .unwrap_or(&0);
+
     /*
       Five of a kind, where all five cards have the same label: AAAAA
       Four of a kind, where four cards have the same label and one card has a different label: AA8AA
@@ -59,8 +71,32 @@ fn hand_value(hand: Hand) -> u8 {
       One pair, where two cards share one label, and the other three cards have a different label from the pair and each other: A23A4
       High card, where all cards' labels are distinct: 23456
     */
+    match (first_group, second_group) {
+        (5, _) => 7,
+        (4, _) => 6,
+        (3, 2) => 5,
+        (3, _) => 4,
+        (2, _) => 3,
+        (1, _) => 2,
+        (_, _) => 1,
+    }
+}
 
-    return 0;
+fn compare_hands(hand1: &Hand, hand2: &Hand) -> Ordering {
+    let hand_order = hand_value(&hand1).cmp(&hand_value(&hand2));
+
+    if hand_order != Ordering::Equal {
+        return hand_order;
+    }
+
+    let mut card_order = hand1
+        .cards
+        .iter()
+        .zip(hand2.cards.iter())
+        .map(|(c1, c2)| c1.cmp(c2))
+        .filter(|order| order != &Ordering::Equal);
+
+    return card_order.next().unwrap_or(Ordering::Equal);
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
@@ -72,7 +108,7 @@ fn first() -> Result<(), Box<dyn Error>> {
 
         println!("Got hands: {:?}", hands);
 
-        hands.sort_by(|hand1, hand2| -> Ordering { hand1.bet.cmp(&hand2.bet) });
+        hands.sort_by(compare_hands);
 
         break;
     }
