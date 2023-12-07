@@ -55,10 +55,15 @@ fn hand_value(hand: &Hand) -> u8 {
         card_counts.insert(*card, card_counts.get(card).unwrap_or(&0) + 1);
     }
 
-    let first_group = card_counts.values().max().unwrap_or(&0);
+    let (first_key, first_group) = card_counts
+        .iter()
+        .max_by(|a, b| a.1.cmp(b.1))
+        .unwrap_or((&0, &0));
+
     let second_group = card_counts
-        .values()
-        .filter(|x| x < &first_group)
+        .iter()
+        .filter(|(key, _value)| *key != first_key)
+        .map(|a| a.1)
         .max()
         .unwrap_or(&0);
 
@@ -77,7 +82,7 @@ fn hand_value(hand: &Hand) -> u8 {
         (3, 2) => 5,
         (3, _) => 4,
         (2, 2) => 3,
-        (1, _) => 2,
+        (2, _) => 2,
         (_, _) => 1,
     }
 }
@@ -142,4 +147,69 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     second()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::task_07::{hand_value, parse_hands, Hand};
+
+    #[test]
+    fn hand_value_should_behave() {
+        // Five of a kind
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [1, 1, 1, 1, 1].to_vec()
+            }),
+            7
+        );
+        // Four of a kind
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [1, 1, 1, 1, 2].to_vec()
+            }),
+            6
+        );
+        // Full house
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [1, 1, 1, 2, 2].to_vec()
+            }),
+            5
+        );
+        // 3 of a kind
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [1, 1, 1, 2, 3].to_vec()
+            }),
+            4
+        );
+        // Two pairs
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [1, 1, 2, 2, 3].to_vec()
+            }),
+            3
+        );
+        // One pair
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [1, 1, 2, 3, 4].to_vec()
+            }),
+            2
+        );
+        // High card
+        assert_eq!(
+            hand_value(&Hand {
+                bet: 0,
+                cards: [5, 4, 3, 2, 1].to_vec()
+            }),
+            1
+        );
+    }
 }
