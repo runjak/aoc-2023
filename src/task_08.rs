@@ -96,15 +96,61 @@ fn first() -> Result<(), Box<dyn Error>> {
 
         let steps = travel(input);
         println!("Total setps: {}", steps);
-
-        // break;
     }
 
     Ok(())
 }
 
+fn start_nodes(input: &Input) -> Vec<String> {
+    let start_node = Regex::new(r"\w\w[aA]").unwrap();
+
+    input
+        .graph
+        .keys()
+        .filter(|key| start_node.is_match(&key))
+        .map(|x| x.to_string())
+        .collect()
+}
+
+fn is_finish_node(node: &str) -> bool {
+    let finish_node = Regex::new(r"\w\w[zZ]").unwrap();
+
+    finish_node.is_match(node)
+}
+
+fn ghost_travel(input: Input) -> i32 {
+    let mut current = start_nodes(&input);
+    let mut steps = 0;
+
+    for step in input.path.iter().cycle() {
+        if current.iter().all(|node| is_finish_node(node)) {
+            break;
+        }
+
+        current = current
+            .iter()
+            .map(|node| apply_step(&input.graph, node, step))
+            .collect();
+        steps += 1;
+    }
+
+    return steps;
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = [
+        "./inputs/08/example-1.txt",
+        "./inputs/08/example-2.txt",
+        "./inputs/08/input.txt",
+    ];
+
+    for path in paths {
+        let contents = fs::read_to_string(path)?;
+        let input = parse_input(contents).unwrap();
+
+        let steps = ghost_travel(input);
+        println!("Total setps: {}", steps);
+    }
 
     Ok(())
 }
