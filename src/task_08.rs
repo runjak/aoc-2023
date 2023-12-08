@@ -141,6 +141,7 @@ fn second() -> Result<(), Box<dyn Error>> {
     let paths = [
         "./inputs/08/example-1.txt",
         "./inputs/08/example-2.txt",
+        "./inputs/08/example-3.txt",
         "./inputs/08/input.txt",
     ];
 
@@ -162,4 +163,23 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     second()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{error::Error, fs};
+
+    use crate::task_08::ghost_travel;
+
+    use super::parse_input;
+
+    #[test]
+    fn ghost_travel_should_work_as_example_3() -> Result<(), Box<dyn Error>> {
+        let contents = fs::read_to_string("./inputs/08/example-3.txt")?;
+        let input = parse_input(contents).unwrap();
+
+        assert_eq!(ghost_travel(input), 6);
+
+        Ok(())
+    }
 }
