@@ -144,12 +144,6 @@ fn fill_jokers(hand: &Hand) -> Hand {
     let joker = 11;
     let ace = 14;
 
-    let (jokers, non_jokers): (Vec<_>, Vec<_>) = hand
-        .cards
-        .iter()
-        .map(|card| *card)
-        .partition(|card| *card == joker);
-
     let card_counts = count_cards(hand);
 
     let (max_card, max_card_count) = card_counts
@@ -160,14 +154,20 @@ fn fill_jokers(hand: &Hand) -> Hand {
 
     let chosen_card = if max_card_count > &1 { max_card } else { &ace };
 
-    let chosen_card_factory = iter::repeat(chosen_card).take(jokers.len());
+    let cards = hand
+        .cards
+        .iter()
+        .map(|current| {
+            if *current == joker {
+                *chosen_card
+            } else {
+                *current
+            }
+        })
+        .collect::<Vec<_>>();
 
     Hand {
-        cards: non_jokers
-            .iter()
-            .chain(chosen_card_factory)
-            .map(|x| *x)
-            .collect(),
+        cards,
         bet: hand.bet,
     }
 }
@@ -294,12 +294,25 @@ mod tests {
             "T5555 684",
             "KK677 28",
             "KTTTT 220",
-            "QQQAQ 483",
+            "QQQQA 483",
         ]
         .join("\n");
 
         let expected_hands = parse_hands(contents);
 
         assert_eq!(filled_hands, expected_hands);
+    }
+
+    #[test]
+    fn fill_jokers_should_fill_jokers_in_place() {
+        let input = Hand {
+            cards: [2, 14, 11, 2, 14].to_vec(),
+            bet: 0,
+        };
+
+        let expected = [2, 14, 14, 2, 14].to_vec();
+        let actual = fill_jokers(&input).cards;
+
+        assert_eq!(actual, expected);
     }
 }
