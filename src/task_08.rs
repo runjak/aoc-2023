@@ -55,14 +55,47 @@ fn parse_input(contents: String) -> Option<Input> {
     })
 }
 
+fn apply_step(graph: &Graph, node: &String, step: &Step) -> String {
+    let (left, right) = graph.get(node).unwrap();
+
+    match step {
+        Step::Left => left.to_string(),
+        Step::Right => right.to_string(),
+    }
+}
+
+fn travel(input: Input) -> i32 {
+    let start = "AAA".to_string();
+    let end = "ZZZ".to_string();
+
+    let mut current = start;
+    let mut steps = 0;
+
+    for step in input.path.iter().cycle() {
+        if current == end {
+            break;
+        }
+
+        current = apply_step(&input.graph, &current, step);
+        steps += 1;
+    }
+
+    return steps;
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
-    let paths = ["./inputs/08/example-1.txt", "./inputs/08/example-2.txt"]; //, "./inputs/08/input.txt"];
+    let paths = [
+        "./inputs/08/example-1.txt",
+        "./inputs/08/example-2.txt",
+        "./inputs/08/input.txt",
+    ];
 
     for path in paths {
         let contents = fs::read_to_string(path)?;
-        let input = parse_input(contents);
+        let input = parse_input(contents).unwrap();
 
-        println!("Got input: {:?}", input);
+        let steps = travel(input);
+        println!("Total setps: {}", steps);
 
         // break;
     }
