@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap, error::Error, fs};
+use std::{cmp::Ordering, collections::HashMap, error::Error, fs, iter};
 
 type Card = i32;
 
@@ -49,11 +49,17 @@ fn parse_hands(contents: String) -> Vec<Hand> {
         .collect()
 }
 
-fn hand_value(hand: &Hand) -> u8 {
+fn count_cards(hand: &Hand) -> HashMap<Card, u8> {
     let mut card_counts: HashMap<Card, u8> = HashMap::new();
     for card in hand.cards.iter() {
         card_counts.insert(*card, card_counts.get(card).unwrap_or(&0) + 1);
     }
+
+    return card_counts;
+}
+
+fn hand_value(hand: &Hand) -> u8 {
+    let card_counts = count_cards(hand);
 
     let (first_key, first_group) = card_counts
         .iter()
@@ -134,7 +140,37 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn fill_jokers(hand:&Hand) -> Hand {
+fn fill_jokers(hand: &Hand) -> Hand {
+    let joker = 11;
+    let ace = 14;
+
+    let (jokers, non_jokers): (Vec<_>, Vec<_>) = hand
+        .cards
+        .iter()
+        .map(|card| *card)
+        .partition(|card| *card == joker);
+
+    let card_counts = count_cards(hand);
+
+    let (max_card, max_card_count) = card_counts
+        .iter()
+        .filter(|(card, _)| **card != joker)
+        .max_by(|a, b| a.1.cmp(b.1))
+        .unwrap_or((&0, &0));
+
+    let chosen_card = if max_card_count > &1 { max_card } else { &ace };
+
+    let chosen_card_factory = iter::repeat(chosen_card).take(jokers.len());
+
+    Hand {
+        cards: non_jokers
+            .iter()
+            .chain(chosen_card_factory)
+            .map(|x| *x)
+            .collect(),
+        bet: hand.bet,
+    }
+
     // FIXME fun here for second task
 }
 
