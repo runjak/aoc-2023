@@ -102,7 +102,7 @@ fn first() -> Result<(), Box<dyn Error>> {
 }
 
 fn start_nodes(input: &Input) -> Vec<String> {
-    let start_node = Regex::new(r"\w\w[aA]").unwrap();
+    let start_node = Regex::new(r"\w\w[aA]$").unwrap();
 
     input
         .graph
@@ -113,28 +113,37 @@ fn start_nodes(input: &Input) -> Vec<String> {
 }
 
 fn is_finish_node(node: &str) -> bool {
-    let finish_node = Regex::new(r"\w\w[zZ]").unwrap();
+    let finish_node = Regex::new(r"\w\w[zZ]$").unwrap();
 
     finish_node.is_match(node)
 }
 
+struct GhostCycle {
+    // Length of the cycle.
+    cycle_length: i32,
+    // Steps to take until visiting the finish node the first time.
+    offsets: Vec<i32>,
+}
+
+fn find_ghost_cycle(input: &Input, start_node: &String) -> GhostCycle {
+    // The simulataneous ghost travels can be understood independently.
+    // We're then looking for something like the lcm of the paths, but slightly worse.
+    // That is because we need to incorporate two aspects:
+    // 1: There may be an initial offset to a finish node.
+    // 2: There may be multiple finish nodes visited in some cycle.
+    // Idea:
+    // For each finish node on the cycle we can produce an initial offset and a common cycle length.
+    // Hence we need to produce a cycle length along with number of possible offsets to start with.
+}
+
 fn ghost_travel(input: Input) -> i32 {
-    let mut current = start_nodes(&input);
-    let mut steps = 0;
+    let starts = start_nodes(&input);
+    let ghost_cycles = starts
+        .iter()
+        .map(|start_node| find_ghost_cycle(&input, start_node))
+        .collect::<Vec<_>>();
 
-    for step in input.path.iter().cycle() {
-        if current.iter().all(|node| is_finish_node(node)) {
-            break;
-        }
-
-        current = current
-            .iter()
-            .map(|node| apply_step(&input.graph, node, step))
-            .collect();
-        steps += 1;
-    }
-
-    return steps;
+    // FIXME this is where the real magic happens.
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
