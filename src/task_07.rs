@@ -172,17 +172,26 @@ fn fill_jokers(hand: &Hand) -> Hand {
     }
 }
 
+fn compare_hands_with_jokers(hand1: &Hand, hand2: &Hand) -> Ordering {
+    let hand_order = hand_value(&fill_jokers(hand1)).cmp(&hand_value(&fill_jokers(hand2)));
+    // let (better_hand_1, better_hand_2) = (fill_jokers(hand1), fill_jokers(hand2));
+    // let hand_order = hand_value(&better_hand_1).cmp(&hand_value(&better_hand_2));
+
+    if hand_order != Ordering::Equal {
+        return hand_order;
+    }
+
+    return cmp_hands_by_cards(hand1, hand2);
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/07/example-1.txt", "./inputs/07/input.txt"];
 
     for path in paths {
         let contents = fs::read_to_string(path)?;
-        let mut hands = parse_hands(contents)
-            .iter()
-            .map(fill_jokers)
-            .collect::<Vec<_>>();
+        let mut hands = parse_hands(contents);
 
-        hands.sort_by(compare_hands);
+        hands.sort_by(compare_hands_with_jokers);
 
         let bets = hands.iter().map(|hand| hand.bet);
         let total_winnings = bets
