@@ -26,7 +26,7 @@ fn parse_cards(cards: &str) -> Vec<Card> {
         .collect()
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Hand {
     cards: Vec<Card>,
     bet: i32,
@@ -210,7 +210,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::task_07::{hand_value, parse_hands, Hand};
+    use crate::task_07::{fill_jokers, hand_value, parse_hands, Hand};
 
     #[test]
     fn hand_value_should_behave() {
@@ -270,5 +270,36 @@ mod tests {
             }),
             1
         );
+    }
+
+    #[test]
+    fn fill_jokers_should_behave() {
+        let contents = [
+            "32T3K 765",
+            "T55J5 684",
+            "KK677 28",
+            "KTJJT 220",
+            "QQQJA 483",
+        ]
+        .join("\n");
+
+        let hands = parse_hands(contents);
+        let filled_hands = hands
+            .iter()
+            .map(|hand| fill_jokers(hand))
+            .collect::<Vec<_>>();
+
+        let contents = [
+            "32T3K 765",
+            "T5555 684",
+            "KK677 28",
+            "KTTTT 220",
+            "QQQAQ 483",
+        ]
+        .join("\n");
+
+        let expected_hands = parse_hands(contents);
+
+        assert_eq!(filled_hands, expected_hands);
     }
 }
