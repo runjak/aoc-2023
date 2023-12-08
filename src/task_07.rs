@@ -170,12 +170,31 @@ fn fill_jokers(hand: &Hand) -> Hand {
             .collect(),
         bet: hand.bet,
     }
-
-    // FIXME fun here for second task
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented.");
+    let paths = ["./inputs/07/example-1.txt", "./inputs/07/input.txt"];
+
+    for path in paths {
+        let contents = fs::read_to_string(path)?;
+        let mut hands = parse_hands(contents)
+            .iter()
+            .map(fill_jokers)
+            .collect::<Vec<_>>();
+
+        hands.sort_by(compare_hands);
+
+        let bets = hands.iter().map(|hand| hand.bet);
+        let total_winnings = bets
+            .enumerate()
+            .map(|(rank, bet)| {
+                let rank = rank + 1;
+                bet * i32::try_from(rank).unwrap()
+            })
+            .sum::<i32>();
+
+        println!("{}", total_winnings);
+    }
 
     Ok(())
 }
