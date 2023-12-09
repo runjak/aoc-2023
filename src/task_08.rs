@@ -134,6 +134,43 @@ fn find_ghost_cycle(input: &Input, start_node: &String) -> GhostCycle {
     // Idea:
     // For each finish node on the cycle we can produce an initial offset and a common cycle length.
     // Hence we need to produce a cycle length along with number of possible offsets to start with.
+
+    // The cycle of steps, but with indices to identify their position in the path.
+    // We have a cycle when we revisit a node with the same index as previously.
+    // If we revisit a node but have a different index it is possible that the following steps will not be the same as before.
+    let steps = input.path.iter().enumerate().cycle();
+
+    struct VisitedAt {
+        offset: i32,
+        step_index: usize,
+    }
+    let mut history = HashMap::from([(
+        start_node,
+        VisitedAt {
+            offset: 0,
+            // We know that the last step of the path must've been the one leading to the start.
+            // We may end up in a smaller cycle than one including the start,
+            // but if we revisit the start we expect that to align with the last step.
+            step_index: input.path.len() - 1,
+        },
+    )]);
+
+    let mut current_node = start_node;
+    let mut cycle_length = 0;
+    for (step_index, step) in steps {
+        // The proof of the pudding belongs here.
+    }
+
+    let offsets = history
+        .iter()
+        .filter(|(node, _)| is_finish_node(node))
+        .map(|(_, visited_at)| visited_at.offset)
+        .collect();
+
+    GhostCycle {
+        cycle_length,
+        offsets,
+    }
 }
 
 fn ghost_travel(input: Input) -> i32 {
@@ -144,6 +181,7 @@ fn ghost_travel(input: Input) -> i32 {
         .collect::<Vec<_>>();
 
     // FIXME this is where the real magic happens.
+    !todo!()
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
