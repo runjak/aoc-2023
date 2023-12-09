@@ -168,8 +168,6 @@ fn ghost_travels(input: Input) -> i128 {
         .map(|start| ghost_travel(&input, start) as i128)
         .collect();
 
-    println!("cycle_lenghts: {:?}", cycle_lengths);
-
     lcm(&cycle_lengths)
 }
 
