@@ -63,7 +63,33 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn extrapolate_first(derives: &Vec<Vec<Z>>) -> Z {
+    let mut firsts = derives
+        .iter()
+        .map(|values| values.first().unwrap_or(&0))
+        .collect::<Vec<_>>();
+    firsts.reverse();
+
+    firsts.iter().fold(0, |acc, value| -> Z {
+        acc - **value
+    })
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
+    let paths = ["./inputs/09/example-1.txt", "./inputs/09/input.txt"];
+
+    for path in paths {
+        let contents = fs::read_to_string(path)?;
+        let input = parse_input(contents);
+
+        let sum = input
+            .iter()
+            .map(|values| extrapolate_first(&derives(values)))
+            .sum::<Z>();
+
+        println!("Sum: {}", sum);
+    }
+
     Ok(())
 }
 
