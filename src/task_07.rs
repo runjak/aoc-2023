@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, collections::HashMap, error::Error, fs, iter};
+use std::{cmp::Ordering, collections::HashMap, error::Error, fs};
 
 type Card = i32;
 
