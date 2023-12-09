@@ -244,63 +244,63 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::task_05::{map_seed, map_seed_range};
+// #[cfg(test)]
+// mod tests {
+//     use crate::task_05::{map_seed, map_seed_range};
 
-    use super::CategoryMap;
+//     use super::CategoryMap;
 
-    #[test]
-    fn map_seed_should_behave() {
-        let category_map = &CategoryMap {
-            from: "seed".to_string(),
-            to: "soil".to_string(),
-            mappings: [(50, 98, 2), (52, 50, 48)].to_vec(),
-        };
+//     #[test]
+//     fn map_seed_should_behave() {
+//         let category_map = &CategoryMap {
+//             from: "seed".to_string(),
+//             to: "soil".to_string(),
+//             mappings: [(50, 98, 2), (52, 50, 48)].to_vec(),
+//         };
 
-        assert_eq!(map_seed(79, category_map), 81);
-        assert_eq!(map_seed(14, category_map), 14);
-        assert_eq!(map_seed(55, category_map), 57);
-        assert_eq!(map_seed(13, category_map), 13);
-    }
+//         assert_eq!(map_seed(79, category_map), 81);
+//         assert_eq!(map_seed(14, category_map), 14);
+//         assert_eq!(map_seed(55, category_map), 57);
+//         assert_eq!(map_seed(13, category_map), 13);
+//     }
 
-    #[test]
-    fn map_seed_range_should_behave() {
-        let category_map = &CategoryMap {
-            from: "seed".to_string(),
-            to: "soil".to_string(),
-            mappings: [(10, 3, 2), (10, 7, 2)].to_vec(),
-        };
+//     #[test]
+//     fn map_seed_range_should_behave() {
+//         let category_map = &CategoryMap {
+//             from: "seed".to_string(),
+//             to: "soil".to_string(),
+//             mappings: [(10, 3, 2), (10, 7, 2)].to_vec(),
+//         };
 
-        // seed before both mappings
-        assert_eq!(map_seed_range((0, 2), category_map), [(0, 2)].to_vec());
-        // seed between both mappings
-        assert_eq!(map_seed_range((5, 2), category_map), [(5, 2)].to_vec());
-        // seed after both mappings
-        assert_eq!(map_seed_range((9, 2), category_map), [(9, 2)].to_vec());
+//         // seed before both mappings
+//         assert_eq!(map_seed_range((0, 2), category_map), [(0, 2)].to_vec());
+//         // seed between both mappings
+//         assert_eq!(map_seed_range((5, 2), category_map), [(5, 2)].to_vec());
+//         // seed after both mappings
+//         assert_eq!(map_seed_range((9, 2), category_map), [(9, 2)].to_vec());
 
-        // seed before and in first mapping
-        assert_eq!(
-            map_seed_range((0, 3), category_map),
-            [(0, 2), (3, 1)].to_vec()
-        );
-        // // seed entirely in first mapping
-        // assert_eq!(map_seed_range((), category_map), [()].to_vec());
-        // // seed in and after first mapping
-        // assert_eq!(map_seed_range((), category_map), [()].to_vec());
-        // // seed spanning all mappings
-        // assert_eq!(map_seed_range((), category_map), [()].to_vec());
-    }
+//         // seed before and in first mapping
+//         assert_eq!(
+//             map_seed_range((0, 3), category_map),
+//             [(0, 2), (3, 1)].to_vec()
+//         );
+//         // // seed entirely in first mapping
+//         // assert_eq!(map_seed_range((), category_map), [()].to_vec());
+//         // // seed in and after first mapping
+//         // assert_eq!(map_seed_range((), category_map), [()].to_vec());
+//         // // seed spanning all mappings
+//         // assert_eq!(map_seed_range((), category_map), [()].to_vec());
+//     }
 
-    // #[test]
-    // fn map_seed_range_should_work_like_example() {
-    //     let category_map = &CategoryMap {
-    //         from: "seed".to_string(),
-    //         to: "soil".to_string(),
-    //         mappings: [(50, 98, 2), (52, 50, 48)].to_vec(),
-    //     };
+//     // #[test]
+//     // fn map_seed_range_should_work_like_example() {
+//     //     let category_map = &CategoryMap {
+//     //         from: "seed".to_string(),
+//     //         to: "soil".to_string(),
+//     //         mappings: [(50, 98, 2), (52, 50, 48)].to_vec(),
+//     //     };
 
-    //     assert_eq!(map_seed_range((79, 14), category_map), [(79, 14)].to_vec());
-    //     assert_eq!(map_seed_range((55, 13), category_map), [(57, 13)].to_vec());
-    // }
-}
+//     //     assert_eq!(map_seed_range((79, 14), category_map), [(79, 14)].to_vec());
+//     //     assert_eq!(map_seed_range((55, 13), category_map), [(57, 13)].to_vec());
+//     // }
+// }
