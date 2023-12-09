@@ -86,8 +86,6 @@ fn second() -> Result<(), Box<dyn Error>> {
             .sum::<Z>();
 
         println!("Sum: {}", sum);
-
-        break;
     }
 
     Ok(())
