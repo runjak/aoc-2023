@@ -155,10 +155,17 @@ fn find_ghost_cycle(input: &Input, start_node: &String) -> GhostCycle {
         },
     )]);
 
-    let mut current_node = start_node;
+    let mut current_node = start_node.to_string();
     let mut cycle_length = 0;
     for (step_index, step) in steps {
         // The proof of the pudding belongs here.
+
+        let next_node = apply_step(&input.graph, &current_node, step);
+
+        // Would we be done?
+
+        current_node = next_node;
+        cycle_length += 1;
     }
 
     let offsets = history
