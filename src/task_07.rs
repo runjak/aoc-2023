@@ -93,15 +93,18 @@ fn hand_value(hand: &Hand) -> u8 {
     }
 }
 
-fn cmp_hands_by_cards(hand1: &Hand, hand2: &Hand) -> Ordering {
-    let mut card_order = hand1
-        .cards
+fn cmp_cards(cards1: &Vec<Card>, cards2: &Vec<Card>) -> Ordering {
+    cards1
         .iter()
-        .zip(hand2.cards.iter())
+        .zip(cards2.iter())
         .map(|(card1, card2)| card1.cmp(card2))
-        .filter(|order| order != &Ordering::Equal);
+        .filter(|order| order != &Ordering::Equal)
+        .next()
+        .unwrap_or(Ordering::Equal)
+}
 
-    return card_order.next().unwrap_or(Ordering::Equal);
+fn cmp_hands_by_cards(hand1: &Hand, hand2: &Hand) -> Ordering {
+    cmp_cards(&hand1.cards, &hand2.cards)
 }
 
 fn compare_hands(hand1: &Hand, hand2: &Hand) -> Ordering {
@@ -133,8 +136,6 @@ fn first() -> Result<(), Box<dyn Error>> {
             .sum::<i32>();
 
         println!("{}", total_winnings);
-
-        // break;
     }
 
     Ok(())
@@ -174,14 +175,26 @@ fn fill_jokers(hand: &Hand) -> Hand {
 
 fn compare_hands_with_jokers(hand1: &Hand, hand2: &Hand) -> Ordering {
     let hand_order = hand_value(&fill_jokers(hand1)).cmp(&hand_value(&fill_jokers(hand2)));
-    // let (better_hand_1, better_hand_2) = (fill_jokers(hand1), fill_jokers(hand2));
-    // let hand_order = hand_value(&better_hand_1).cmp(&hand_value(&better_hand_2));
 
     if hand_order != Ordering::Equal {
         return hand_order;
     }
 
-    return cmp_hands_by_cards(hand1, hand2);
+    let joker = &11;
+    let weakest = 1;
+
+    let joker_cards_1 = hand1
+        .cards
+        .iter()
+        .map(|card| if card == joker { weakest } else { *card })
+        .collect::<Vec<_>>();
+    let joker_cards_2 = hand2
+        .cards
+        .iter()
+        .map(|card| if card == joker { weakest } else { *card })
+        .collect::<Vec<_>>();
+
+    cmp_cards(&joker_cards_1, &joker_cards_2)
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
