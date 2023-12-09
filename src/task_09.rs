@@ -38,6 +38,13 @@ fn derives(values: &Vec<Z>) -> Vec<Vec<Z>> {
     return ret;
 }
 
+fn extrapolate_last(derives: &Vec<Vec<Z>>) -> Z {
+    derives
+        .iter()
+        .map(|values| values.last().unwrap_or(&0))
+        .sum()
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/09/example-1.txt", "./inputs/09/input.txt"];
 
@@ -45,9 +52,12 @@ fn first() -> Result<(), Box<dyn Error>> {
         let contents = fs::read_to_string(path)?;
         let input = parse_input(contents);
 
-        println!("Input:\n{:?}", derives(input.get(0).unwrap()));
+        let sum = input
+            .iter()
+            .map(|values| extrapolate_last(&derives(values)))
+            .sum::<Z>();
 
-        break;
+        println!("Sum: {}", sum);
     }
 
     Ok(())
