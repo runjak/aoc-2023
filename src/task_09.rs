@@ -70,9 +70,7 @@ fn extrapolate_first(derives: &Vec<Vec<Z>>) -> Z {
         .collect::<Vec<_>>();
     firsts.reverse();
 
-    firsts.iter().fold(0, |acc, value| -> Z {
-        acc - **value
-    })
+    firsts.iter().fold(0, |acc, value| -> Z { **value - acc })
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
@@ -88,6 +86,8 @@ fn second() -> Result<(), Box<dyn Error>> {
             .sum::<Z>();
 
         println!("Sum: {}", sum);
+
+        break;
     }
 
     Ok(())
@@ -104,12 +104,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
-
-    use super::derives;
+    use super::{derives, extrapolate_first};
 
     #[test]
-    fn derives_should_match_examples() -> Result<(), Box<dyn Error>> {
+    fn derives_should_match_examples() {
         let examples = [
             [0, 3, 6, 9, 12, 15].to_vec(),
             [1, 3, 6, 10, 15, 21].to_vec(),
@@ -149,7 +147,26 @@ mod tests {
         assert_eq!(actual_1, &expected_1);
         assert_eq!(actual_2, &expected_2);
         assert_eq!(actual_3, &expected_3);
+    }
 
-        Ok(())
+    #[test]
+    fn extrapolate_first_should_behave_as_example_states() {
+        let examples = [
+            [0, 3, 6, 9, 12, 15].to_vec(),
+            [1, 3, 6, 10, 15, 21].to_vec(),
+            [10, 13, 16, 21, 30, 45].to_vec(),
+        ]
+        .to_vec();
+
+        let expected = [-3, 0, 5].to_vec();
+
+        let actual = examples
+            .iter()
+            .map(|example| extrapolate_first(&derives(example)))
+            .collect::<Vec<_>>();
+
+        println!("Got actuals: {:?}", actual);
+
+        assert_eq!(actual, expected);
     }
 }
