@@ -65,3 +65,55 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use super::derives;
+
+    #[test]
+    fn derives_should_match_examples() -> Result<(), Box<dyn Error>> {
+        let examples = [
+            [0, 3, 6, 9, 12, 15].to_vec(),
+            [1, 3, 6, 10, 15, 21].to_vec(),
+            [10, 13, 16, 21, 30, 45].to_vec(),
+        ]
+        .to_vec();
+
+        let [expected_1, expected_2, expected_3] = [
+            [
+                [0, 3, 6, 9, 12, 15].to_vec(),
+                [3, 3, 3, 3, 3].to_vec(),
+                [0, 0, 0, 0].to_vec(),
+            ]
+            .to_vec(),
+            [
+                [1, 3, 6, 10, 15, 21].to_vec(),
+                [2, 3, 4, 5, 6].to_vec(),
+                [1, 1, 1, 1].to_vec(),
+                [0, 0, 0].to_vec(),
+            ]
+            .to_vec(),
+            [
+                [10, 13, 16, 21, 30, 45].to_vec(),
+                [3, 3, 5, 9, 15].to_vec(),
+                [0, 2, 4, 6].to_vec(),
+                [2, 2, 2].to_vec(),
+                [0, 0].to_vec(),
+            ]
+            .to_vec(),
+        ];
+
+        let actual_derives = examples.iter().map(derives).collect::<Vec<_>>();
+        let [actual_1, actual_2, actual_3] = actual_derives.as_slice() else {
+            todo!("test could not match actual outputs as expected")
+        };
+
+        assert_eq!(actual_1, &expected_1);
+        assert_eq!(actual_2, &expected_2);
+        assert_eq!(actual_3, &expected_3);
+
+        Ok(())
+    }
+}
