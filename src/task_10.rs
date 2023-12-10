@@ -85,7 +85,11 @@ fn flood_fill(input: &Input, from: &Coordinate) -> StepsTo {
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
-    let paths = ["./inputs/10/example-1.txt", "./inputs/10/example-2.txt"]; //, "./inputs/10/input.txt"];
+    let paths = [
+        "./inputs/10/example-1.txt",
+        "./inputs/10/example-2.txt",
+        "./inputs/10/input.txt",
+    ];
 
     for path in paths {
         let input = fs::read_to_string(path)?;
