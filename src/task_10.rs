@@ -106,7 +106,38 @@ fn first() -> Result<(), Box<dyn Error>> {
 }
 
 fn replace_start(input: &Input) -> Input {
-    // FIXME do the magic here.
+    let start = find_start(input);
+    let nexts = connected(input, &start);
+
+    let different_ys = nexts.iter().filter(|n| n.1 != start.1).count();
+    let has_x_right = nexts.iter().any(|n| n.0 > start.0);
+    let has_y_bottom = nexts.iter().any(|n| n.1 > start.1);
+
+    let replacement = if different_ys >= 2 {
+        '|'
+    } else if different_ys > 0 {
+        if has_x_right {
+            if has_y_bottom {
+                'F'
+            } else {
+                'L'
+            }
+        } else {
+            '.'
+        }
+    } else {
+        '.'
+    };
+
+    input
+        .iter()
+        .map(|(coordinates, symbol)| -> (Coordinate, char) {
+            (
+                *coordinates,
+                if symbol == &'S' { replacement } else { *symbol },
+            )
+        })
+        .collect()
 }
 
 fn count_insides(input: &Input, steps_to: &StepsTo) -> i32 {
@@ -149,7 +180,7 @@ fn count_insides(input: &Input, steps_to: &StepsTo) -> i32 {
                         .unwrap_or('.');
 
                     match (symbol, first_closing_edge) {
-                        ('F', '7') | ('L', 'J') => {
+                        ('F', 'J') | ('L', '7') => {
                             is_outside = !is_outside;
                         }
                         _ => {}
@@ -171,7 +202,7 @@ fn second() -> Result<(), Box<dyn Error>> {
         "./inputs/10/example-3.txt",
         "./inputs/10/example-4.txt",
         "./inputs/10/example-5.txt",
-        // "./inputs/10/input.txt",
+        "./inputs/10/input.txt",
     ];
 
     for path in paths {
