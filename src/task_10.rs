@@ -1,8 +1,9 @@
 use std::{collections::HashMap, error::Error, fs};
 
 type Coordinate = (usize, usize);
+type Input = HashMap<Coordinate, char>;
 
-fn parse_input(input: String) -> HashMap<Coordinate, char> {
+fn parse_input(input: String) -> Input {
     input
         .lines()
         .enumerate()
@@ -15,6 +16,16 @@ fn parse_input(input: String) -> HashMap<Coordinate, char> {
         .collect()
 }
 
+fn find_start(input: &Input) -> Coordinate {
+    for (coordinate, symbol) in input.iter() {
+        if 'S' == *symbol {
+            return coordinate.to_owned();
+        }
+    }
+
+    todo!("Unreachable by problem definition.");
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/10/example-1.txt", "./inputs/10/example-2.txt"]; //, "./inputs/10/input.txt"];
 
@@ -23,6 +34,9 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = parse_input(input);
 
         println!("Got input:\n{:?}", input);
+
+        let start = find_start(&input);
+        println!("Start is: {:?}", start);
     }
 
     Ok(())
