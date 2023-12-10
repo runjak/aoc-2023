@@ -59,6 +59,31 @@ fn connected(input: &Input, from: &Coordinate) -> Vec<Coordinate> {
         .collect()
 }
 
+type StepsTo = HashMap<Coordinate, i32>;
+
+fn flood_fill(input: &Input, from: &Coordinate) -> StepsTo {
+    let mut steps_to = HashMap::from([(from.to_owned(), 0)]);
+    let mut nexts = connected(input, from);
+    let mut steps_so_far = 1;
+
+    while !&nexts.is_empty() {
+        let mut over_nexts: Vec<Coordinate> = Vec::new();
+
+        for next in nexts {
+            if !steps_to.contains_key(&next) {
+                steps_to.insert(next.to_owned(), steps_so_far);
+                over_nexts.append(&mut connected(input, &next));
+            }
+        }
+        steps_so_far += 1;
+
+        // We could consider filtering the over_nexts here to not contain stuff already in steps_to
+        nexts = over_nexts;
+    }
+
+    steps_to
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/10/example-1.txt", "./inputs/10/example-2.txt"]; //, "./inputs/10/input.txt"];
 
@@ -66,13 +91,11 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let input = parse_input(input);
 
-        println!("Got input:\n{:?}", input);
-
         let start = find_start(&input);
-        println!("Start is: {:?}", start);
+        let steps_to = flood_fill(&input, &start);
 
-        let cs = connected(&input, &start);
-        println!("Connected from start:\n\t{:?}", cs);
+        let max_steps = steps_to.values().max().unwrap();
+        println!("Max steps are {}", max_steps);
     }
 
     Ok(())
