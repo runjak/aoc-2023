@@ -105,7 +105,65 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn count_insides(input: &Input, steps_to: &StepsTo) -> i32 {0}
+fn replace_start(input: &Input) -> Input {
+    // FIXME do the magic here.
+}
+
+fn count_insides(input: &Input, steps_to: &StepsTo) -> i32 {
+    let input = replace_start(input);
+    let x_max = *input.keys().map(|(x, _)| x).max().unwrap_or(&0);
+    let y_max = *input.keys().map(|(_, y)| y).max().unwrap_or(&0);
+
+    let mut inside_count = 0;
+
+    for y in 0..y_max {
+        let mut is_outside = true;
+
+        for x in 0..x_max {
+            let coordinate = (x, y);
+            let on_cycle = steps_to.contains_key(&coordinate);
+            let symbol = *input.get(&coordinate).unwrap_or(&'.');
+
+            if on_cycle {
+                if symbol == '|' {
+                    is_outside = !is_outside;
+                } else if symbol == 'F' || symbol == 'L' {
+                    let first_closing_edge = (x + 1..x_max)
+                        .filter_map(|x_next| -> Option<char> {
+                            // Return an Option of a closing edge :)
+                            let next_coordinate = (x_next, y);
+
+                            if !steps_to.contains_key(&next_coordinate) {
+                                return None;
+                            }
+
+                            let next_symbol = *input.get(&next_coordinate).unwrap_or(&'.');
+
+                            if next_symbol == '7' || next_symbol == 'J' {
+                                return Some(next_symbol);
+                            }
+
+                            None
+                        })
+                        .next()
+                        .unwrap_or('.');
+
+                    match (symbol, first_closing_edge) {
+                        ('F', '7') | ('L', 'J') => {
+                            is_outside = !is_outside;
+                        }
+                        _ => {}
+                    }
+                }
+            } else if !is_outside {
+                // !on_cycle
+                inside_count += 1;
+            }
+        }
+    }
+
+    inside_count
+}
 
 fn second() -> Result<(), Box<dyn Error>> {
     println!("To be implemented.");
