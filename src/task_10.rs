@@ -105,8 +105,28 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn count_insides(input: &Input, steps_to: &StepsTo) -> i32 {0}
+
 fn second() -> Result<(), Box<dyn Error>> {
     println!("To be implemented.");
+    let paths = [
+        "./inputs/10/example-3.txt",
+        "./inputs/10/example-4.txt",
+        "./inputs/10/example-5.txt",
+        // "./inputs/10/input.txt",
+    ];
+
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let input = parse_input(input);
+
+        let start = find_start(&input);
+        let steps_to = flood_fill(&input, &start);
+
+        let insides = count_insides(&input, &steps_to);
+
+        println!("Insides counted are {}", insides);
+    }
 
     Ok(())
 }
