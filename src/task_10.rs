@@ -197,7 +197,6 @@ fn count_insides(input: &Input, steps_to: &StepsTo) -> i32 {
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented.");
     let paths = [
         "./inputs/10/example-3.txt",
         "./inputs/10/example-4.txt",
