@@ -9,6 +9,7 @@ mod task_07;
 mod task_08;
 mod task_09;
 mod task_10;
+mod task_11;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args()
@@ -26,6 +27,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         task_08::main,
         task_09::main,
         task_10::main,
+        task_11::main,
     ]);
 
     match args.first() {
