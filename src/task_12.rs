@@ -66,6 +66,49 @@ fn generate_candidates(spring_data: &SpringData) -> Vec<String> {
     do_generate_candidates(missing_broken, missing_unbroken, &spring_data.0)
 }
 
+fn is_valid_arrangement(candidate: String, groups: &Groups) -> bool {
+    let mut candidate = candidate.as_str();
+
+    for group in groups {
+        // We need group as a usize here
+        let Some(group) = usize::try_from(*group).ok() else {
+            return false;
+        };
+
+        // Remove possible non-group prefix
+        let Some(group_start) = candidate.find("#") else {
+            return false;
+        };
+        candidate = &candidate[group_start..];
+
+        // Check for continuous group
+        let group_is_consistent = candidate.chars().take(group).all(|c| c == '#');
+        if !group_is_consistent {
+            return false;
+        }
+
+        // Discard current group as we just checked it
+        candidate = &candidate[group..];
+        // First element cannot also be broken now.
+        match candidate.chars().next() {
+            Some('#') => return false,
+            _ => (),
+        }
+    }
+
+    // No broken springs may remain after the groups:
+    !candidate.contains("#")
+}
+
+fn generate_arrangements(spring_data: &SpringData) -> Vec<String> {
+    let candidates = generate_candidates(spring_data);
+    candidates
+        .iter()
+        .filter(|candidate| is_valid_arrangement((*candidate).to_string(), &spring_data.1))
+        .map(|s| s.to_string())
+        .collect()
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/12/example-1.txt", "./inputs/12/input.txt"];
 
@@ -74,9 +117,12 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let input = parse_input(input);
 
-        println!("parsed input:\n{:?}", input);
+        let sum_of_arrangements = input
+            .iter()
+            .map(|spring_data| N::try_from(generate_arrangements(spring_data).len()).unwrap())
+            .sum::<N>();
 
-        break;
+        println!("Sum of arrangements: {}", sum_of_arrangements);
     }
 
     Ok(())
@@ -101,10 +147,10 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use crate::task_12::generate_candidates;
 
-    use super::SpringData;
+    use super::{generate_arrangements, SpringData};
 
     #[test]
-    fn generate_candidates_should_produce_example_candidates() {
+    fn generate_candidates_should_produce_expected_candidates() {
         let example: SpringData = ("???.###".to_string(), [1, 1, 3].to_vec());
 
         let expected = [
@@ -115,6 +161,29 @@ mod tests {
         .to_vec();
 
         let actual = generate_candidates(&example);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn generate_arrangements_should_reproduce_example() {
+        let example: SpringData = ("?###????????".to_string(), [3, 2, 1].to_vec());
+
+        let expected = [
+            ".###.##.#...".to_string(),
+            ".###.##..#..".to_string(),
+            ".###.##...#.".to_string(),
+            ".###.##....#".to_string(),
+            ".###..##.#..".to_string(),
+            ".###..##..#.".to_string(),
+            ".###..##...#".to_string(),
+            ".###...##.#.".to_string(),
+            ".###...##..#".to_string(),
+            ".###....##.#".to_string(),
+        ]
+        .to_vec();
+
+        let actual = generate_arrangements(&example);
 
         assert_eq!(actual, expected);
     }
