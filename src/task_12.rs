@@ -128,8 +128,51 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn unfold_spring_data(spring_data: &SpringData) -> SpringData {
+    let (springs, groups) = spring_data;
+
+    let springs = [
+        springs.to_string(),
+        springs.to_string(),
+        springs.to_string(),
+        springs.to_string(),
+        springs.to_string(),
+    ]
+    .to_vec()
+    .join("?");
+
+    let groups = [
+        groups.clone(),
+        groups.clone(),
+        groups.clone(),
+        groups.clone(),
+        groups.clone(),
+    ]
+    .to_vec()
+    .concat();
+
+    (springs, groups)
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = ["./inputs/12/example-1.txt", "./inputs/12/input.txt"];
+
+    for path in paths {
+        println!("File {}", path);
+        let input = fs::read_to_string(path)?;
+        let input = parse_input(input);
+
+        let sum_of_arrangements = input
+            .iter()
+            .map(|spring_data| {
+                N::try_from(generate_arrangements(&unfold_spring_data(spring_data)).len()).unwrap()
+            })
+            .sum::<N>();
+
+        println!("Sum of arrangements: {}", sum_of_arrangements);
+
+        break;
+    }
 
     Ok(())
 }
@@ -147,7 +190,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use crate::task_12::generate_candidates;
 
-    use super::{generate_arrangements, SpringData};
+    use super::{generate_arrangements, unfold_spring_data, SpringData};
 
     #[test]
     fn generate_candidates_should_produce_expected_candidates() {
@@ -184,6 +227,19 @@ mod tests {
         .to_vec();
 
         let actual = generate_arrangements(&example);
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn unfold_spring_data_should_behave_as_provided_example() {
+        let example: SpringData = ("???.###".to_string(), [1, 1, 3].to_vec());
+        let expected: SpringData = (
+            "???.###????.###????.###????.###????.###".to_string(),
+            [1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3, 1, 1, 3].to_vec(),
+        );
+
+        let actual = unfold_spring_data(&example);
 
         assert_eq!(actual, expected);
     }
