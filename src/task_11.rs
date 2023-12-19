@@ -4,7 +4,7 @@ use std::{
     fs,
 };
 
-type N = i32;
+type N = i128;
 type Coordinate = (N, N);
 type InputMap = HashMap<Coordinate, char>;
 
@@ -113,7 +113,19 @@ fn first() -> Result<(), Box<dyn Error>> {
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented.");
+    let paths = ["./inputs/11/example-1.txt", "./inputs/11/input.txt"];
+
+    for path in paths {
+        println!("Handling file {}:", path);
+
+        let contents = fs::read_to_string(path)?;
+        let input = parse_input(contents);
+        let galaxies = find_galaxies(&input);
+        let galaxies = expand_galaxies(&galaxies, 1000000 - 1);
+
+        let sum = distances(&galaxies).iter().sum::<N>();
+        println!("Sum of distances is {}", sum);
+    }
 
     Ok(())
 }
