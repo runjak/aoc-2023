@@ -1,4 +1,4 @@
-use std::{error::Error, fs};
+use std::{collections::HashSet, error::Error, fs};
 
 type N = u32;
 type Groups = Vec<N>;
@@ -154,89 +154,30 @@ fn unfold_spring_data(spring_data: &SpringData) -> SpringData {
     (springs, groups)
 }
 
-// FIXME better naming?
-fn breed(spring_data: &SpringData) -> Vec<SpringData> {
-    let (springs, groups) = spring_data;
+// We need a faster generate_arrangements.
+// We'll try to produce it by generating and validating possible positions for the groups.
 
-    let broken: SpringData = (springs.replacen("?", "#", 1), groups.clone());
-    let working: SpringData = (springs.replacen("?", ".", 1), groups.clone());
+fn extract_known_working_broken(spring_data: &SpringData) -> (HashSet<N>, HashSet<N>) {
+    let mut working: HashSet<N> = HashSet::new();
+    let mut broken: HashSet<N> = HashSet::new();
 
-    Vec::from([broken, working])
-}
-
-fn is_plausible(spring_data: &SpringData) -> bool {
-    let (springs, groups) = spring_data;
-
-    let expected_broken = groups.iter().sum::<N>();
-    let Some(current_broken) = N::try_from(springs.chars().filter(|c| *c == '#').count()).ok()
-    else {
-        return false;
-    };
-
-    if current_broken > expected_broken {
-        return false;
-    }
-
-    // Similar code to is_valid_arrangement
-    let mut candidate = spring_data.0.as_str();
-
-    for group in groups {
-        let Some(group) = usize::try_from(*group).ok() else {
-            return false;
+    for (index, char) in spring_data.0.chars().enumerate() {
+        let Some(index) = N::try_from(index).ok() else {
+            continue;
         };
 
-        // Remove possible non-group prefix of '.'
-
-        // Check for continues group
-
-        // Discard current group
-
-        // First element must now be other than '#'.
-    }
-
-    todo!("Draw the rest of the owl.")
-}
-
-// FIXME better naming?
-fn ultra_step(spring_data: &SpringData) -> (Vec<String>, Vec<SpringData>) {
-    let mut arrangements: Vec<String> = Vec::new();
-    let mut next_sources: Vec<SpringData> = Vec::new();
-
-    let next_candidates = breed(&spring_data);
-
-    for candidate in next_candidates {
-        if !is_plausible(&candidate) {
-            continue;
-        }
-
-        let is_unfinished = candidate.0.contains("?");
-
-        if is_unfinished {
-            next_sources.push(candidate);
-        } else {
-            arrangements.push(candidate.0);
+        match char {
+            '.' => {
+                working.insert(index);
+            }
+            '#' => {
+                broken.insert(index);
+            }
+            _ => (),
         }
     }
 
-    (arrangements, next_sources)
-}
-
-// FIXME type signature and magic and such
-// Behavior should match generate_arrangements and so we can test it with that.
-fn ultra_function(spring_data: &SpringData) -> Vec<String> {
-    let mut arrangements: Vec<String> = Vec::new();
-    let mut candidate_sources: Vec<SpringData> = Vec::from([spring_data.clone()]);
-
-    while !candidate_sources.is_empty() {
-        let spring_data = candidate_sources.pop().unwrap();
-
-        let (mut new_arrangements, mut new_candidate_sources) = ultra_step(&spring_data);
-
-        arrangements.append(&mut new_arrangements);
-        candidate_sources.append(&mut new_candidate_sources);
-    }
-
-    return arrangements;
+    (working, broken)
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
