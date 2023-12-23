@@ -157,7 +157,11 @@ fn unfold_spring_data(spring_data: &SpringData) -> SpringData {
 // We need a faster generate_arrangements.
 // We'll try to produce it by generating and validating possible positions for the groups.
 
-fn extract_known_working_broken(spring_data: &SpringData) -> (HashSet<N>, HashSet<N>) {
+/*
+Find the positions of all springs that are known to be working and broken.
+The intention is to use these for easier constraint checking.
+*/
+fn known_working_and_broken(spring_data: &SpringData) -> (HashSet<N>, HashSet<N>) {
     let mut working: HashSet<N> = HashSet::new();
     let mut broken: HashSet<N> = HashSet::new();
 
@@ -178,6 +182,20 @@ fn extract_known_working_broken(spring_data: &SpringData) -> (HashSet<N>, HashSe
     }
 
     (working, broken)
+}
+
+/*
+Calculate the minimum length that groups can be squished together to accounting for 1 space between each group.
+*/
+fn minimum_squish(groups: &Groups) -> N {
+    let broken_count = groups.iter().sum::<N>();
+    let space_between_count = N::try_from(groups.len().max(1) - 1).unwrap_or(0);
+
+    broken_count + space_between_count
+}
+
+fn faster_generate_arrangements(spring_data: &SpringData) -> Vec<String> {
+    let (working, broken) = known_working_and_broken(spring_data);
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
