@@ -1,4 +1,9 @@
-use std::{collections::HashSet, error::Error, fs};
+use std::{
+    collections::HashSet,
+    error::Error,
+    fs,
+    io::{self, Write},
+};
 
 type N = u32;
 type Groups = Vec<N>;
@@ -194,8 +199,29 @@ fn minimum_squish(groups: &Groups) -> N {
     broken_count + space_between_count
 }
 
+/*
+Produce a Vec of possible prefixes for the springs.
+*/
+fn group_prefixes(springs: &String, group: N) -> Vec<String> {
+    let Some(start_index) = springs.find(|c| c != '.') else {
+        return Vec::new();
+    };
+
+    let (common_prefix, tail) = springs.split_at(start_index);
+
+    // if tail.len() < group {
+    //     return Vec::new();
+    // }
+
+    let stop_index = tail.find('.').unwrap_or(tail.len());
+
+    todo!("to be implemented")
+}
+
 fn faster_generate_arrangements(spring_data: &SpringData) -> Vec<String> {
     let (working, broken) = known_working_and_broken(spring_data);
+
+    todo!("to be implemented")
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
