@@ -51,20 +51,39 @@ fn move_north(lines: &Vec<String>) -> Vec<String> {
     transpose_lines(&move_west(&transpose_lines(lines)))
 }
 
+type N = usize;
+
+fn compute_load(lines: &Vec<String>) -> N {
+    let max_load = lines.len();
+
+    lines
+        .iter()
+        .enumerate()
+        .map(|(index, line)| {
+            let line_load = max_load - index;
+            let rock_count = line.chars().filter(|c| *c == MOVABLE_ROCK).count();
+
+            line_load * rock_count
+        })
+        .sum()
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/14/example-1.txt", "./inputs/14/input.txt"];
 
     for path in paths {
+        println!("Handling file: {}", path);
+
         let contents = fs::read_to_string(path)?;
         let contents = contents
             .lines()
             .map(|line| line.to_string())
             .collect::<Vec<_>>();
 
-        println!("Read file: {}", path);
-        println!("File contents:\n{}", contents.join("\n"));
+        let moved = move_north(&contents);
+        let load = compute_load(&moved);
 
-        break;
+        println!("Computed load: {}", load);
     }
 
     Ok(())
@@ -108,7 +127,10 @@ mod tests {
         .to_vec();
 
         let input = fs::read_to_string("./inputs/14/example-1.txt").unwrap();
-        let input = input.lines().map(|line| line.to_string()).collect::<Vec<_>>();
+        let input = input
+            .lines()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
 
         let actual = move_north(&input);
 
