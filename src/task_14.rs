@@ -89,6 +89,27 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn reverse_lines(lines: &Vec<String>) -> Vec<String> {
+    lines
+        .iter()
+        .map(|line| line.chars().rev().collect())
+        .collect()
+}
+
+fn move_south(lines: &Vec<String>) -> Vec<String> {
+    transpose_lines(&reverse_lines(&move_west(&reverse_lines(
+        &transpose_lines(lines),
+    ))))
+}
+
+fn move_east(lines: &Vec<String>) -> Vec<String> {
+    reverse_lines(&move_west(&reverse_lines(lines)))
+}
+
+fn spin_cycle(lines: &Vec<String>) -> Vec<String> {
+    move_east(&move_south(&move_west(&move_north(lines))))
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
     println!("To be implemented.");
 
@@ -108,7 +129,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::fs;
 
-    use super::move_north;
+    use super::{move_north, spin_cycle};
 
     #[test]
     fn move_north_should_behave_as_in_example() {
@@ -135,5 +156,66 @@ mod tests {
         let actual = move_north(&input);
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn spin_cycle_should_behave_as_in_example() {
+        let [expected_1, expected_2, expected_3] = [
+            [
+                ".....#....".to_string(),
+                "....#...O#".to_string(),
+                "...OO##...".to_string(),
+                ".OO#......".to_string(),
+                ".....OOO#.".to_string(),
+                ".O#...O#.#".to_string(),
+                "....O#....".to_string(),
+                "......OOOO".to_string(),
+                "#...O###..".to_string(),
+                "#..OO#....".to_string(),
+            ]
+            .to_vec(),
+            [
+                ".....#....".to_string(),
+                "....#...O#".to_string(),
+                ".....##...".to_string(),
+                "..O#......".to_string(),
+                ".....OOO#.".to_string(),
+                ".O#...O#.#".to_string(),
+                "....O#...O".to_string(),
+                ".......OOO".to_string(),
+                "#..OO###..".to_string(),
+                "#.OOO#...O".to_string(),
+            ]
+            .to_vec(),
+            [
+                ".....#....".to_string(),
+                "....#...O#".to_string(),
+                ".....##...".to_string(),
+                "..O#......".to_string(),
+                ".....OOO#.".to_string(),
+                ".O#...O#.#".to_string(),
+                "....O#...O".to_string(),
+                ".......OOO".to_string(),
+                "#...O###.O".to_string(),
+                "#.OOO#...O".to_string(),
+            ]
+            .to_vec(),
+        ];
+
+        let input = fs::read_to_string("./inputs/14/example-1.txt").unwrap();
+        let input = input
+            .lines()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
+
+        let [actual_1, actual_2, actual_3] = [
+            spin_cycle(&input),
+            spin_cycle(&spin_cycle(&input)),
+            spin_cycle(&spin_cycle(&spin_cycle(&input))),
+        ];
+
+        assert_eq!(actual_1,expected_1);
+        assert_eq!(actual_2,expected_2);
+        assert_eq!(actual_3,expected_3);
     }
 }
