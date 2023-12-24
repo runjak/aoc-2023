@@ -35,7 +35,7 @@ fn transpose_pattern(pattern: &Pattern) -> Pattern {
 
 type N = u32;
 
-fn filter_symmetries(line: &String, candidates: Vec<usize>) -> Vec<usize> {
+fn filter_symmetries(line: &String, candidates: &Vec<usize>) -> Vec<usize> {
     let mut filtered_candidates: Vec<usize> = Vec::new();
 
     for candidate in candidates {
@@ -49,7 +49,7 @@ fn filter_symmetries(line: &String, candidates: Vec<usize>) -> Vec<usize> {
         };
 
         if is_symmetric {
-            filtered_candidates.push(candidate);
+            filtered_candidates.push(*candidate);
         }
     }
 
@@ -71,12 +71,12 @@ fn find_horizontal_symmetry(pattern: &Pattern) -> Option<N> {
             return None;
         }
 
-        column_candidates = filter_symmetries(line, column_candidates);
+        column_candidates = filter_symmetries(line, &column_candidates);
     }
 
     // Extract found symmetry
-    let symmetry = column_candidates.first()? + 1;
-    N::try_from(symmetry).ok()
+    let symmetry = column_candidates.first()?;
+    N::try_from(*symmetry).ok()
 }
 
 fn find_vertical_symmetry(pattern: &Pattern) -> Option<N> {
@@ -84,11 +84,13 @@ fn find_vertical_symmetry(pattern: &Pattern) -> Option<N> {
 }
 
 fn score_pattern(pattern: &Pattern) -> N {
-    find_horizontal_symmetry(pattern).unwrap_or_else(|| {
-        find_vertical_symmetry(pattern)
-            .map(|n| 100 * n)
-            .unwrap_or(0)
-    })
+    find_horizontal_symmetry(pattern)
+        .map(|n| n + 1)
+        .unwrap_or_else(|| {
+            find_vertical_symmetry(pattern)
+                .map(|n| 100 * (n + 1))
+                .unwrap_or(0)
+        })
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
@@ -110,8 +112,50 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn find_smudge_horizontal_symmetry(pattern: &Pattern) -> Vec<N> {
+    if pattern.is_empty() {
+        return Vec::new();
+    }
+
+    let width = pattern[0].len();
+    let mut candidates = (0..width - 1).collect::<Vec<_>>();
+    let mut can_skip = true;
+
+    for line in pattern {
+        let next_candidates = filter_symmetries(line, &candidates);
+
+        if can_skip && next_candidates.len() < 2 {
+            can_skip = false;
+        } else {
+            candidates = next_candidates;
+        }
+    }
+
+    candidates
+        .iter()
+        .filter_map(|candidate| N::try_from(*candidate).ok())
+        .collect()
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = ["./inputs/13/example-1.txt", "./inputs/13/input.txt"];
+
+    for path in paths {
+        println!("File {}", path);
+
+        let contents = fs::read_to_string(path)?;
+        let input = parse_input(contents);
+
+        for pattern in input {
+            println!("Looking at pattern:");
+            pattern.iter().for_each(|line| println!("  {}", line));
+
+            let foo = find_smudge_horizontal_symmetry(&pattern);
+            println!("Found symmetries: {:?}", foo);
+        }
+
+        break;
+    }
 
     Ok(())
 }
