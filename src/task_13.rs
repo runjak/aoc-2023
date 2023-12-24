@@ -33,6 +33,64 @@ fn transpose_pattern(pattern: &Pattern) -> Pattern {
         .collect()
 }
 
+type N = u32;
+
+fn filter_symmetries(line: &String, candidates: Vec<usize>) -> Vec<usize> {
+    let mut filtered_candidates: Vec<usize> = Vec::new();
+
+    for candidate in candidates {
+        let (prefix, suffix) = line.split_at(candidate + 1);
+        let prefix = prefix.chars().rev().collect::<String>();
+
+        let is_symmetric = if prefix.len() > suffix.len() {
+            prefix.starts_with(suffix)
+        } else {
+            suffix.starts_with(&prefix)
+        };
+
+        if is_symmetric {
+            filtered_candidates.push(candidate);
+        }
+    }
+
+    filtered_candidates
+}
+
+fn find_horizontal_symmetry(pattern: &Pattern) -> Option<N> {
+    if pattern.is_empty() {
+        return None;
+    }
+
+    let width = pattern[0].len();
+    let mut column_candidates = (0..width - 1).collect::<Vec<_>>();
+
+    // Filter column_candidates against all rows of a pattern
+    for line in pattern {
+        // Early exit where possible
+        if column_candidates.is_empty() {
+            return None;
+        }
+
+        column_candidates = filter_symmetries(line, column_candidates);
+    }
+
+    // Extract found symmetry
+    let symmetry = column_candidates.first()? + 1;
+    N::try_from(symmetry).ok()
+}
+
+fn find_vertical_symmetry(pattern: &Pattern) -> Option<N> {
+    find_horizontal_symmetry(&transpose_pattern(pattern))
+}
+
+fn score_pattern(pattern: &Pattern) -> N {
+    find_horizontal_symmetry(pattern).unwrap_or_else(|| {
+        find_vertical_symmetry(pattern)
+            .map(|n| 100 * n)
+            .unwrap_or(0)
+    })
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/13/example-1.txt", "./inputs/13/input.txt"];
 
@@ -42,9 +100,11 @@ fn first() -> Result<(), Box<dyn Error>> {
         let contents = fs::read_to_string(path)?;
         let input = parse_input(contents);
 
-        println!("Got inputs: {:?}", input);
-
-        break;
+        let sum = input
+            .iter()
+            .map(|pattern| score_pattern(pattern))
+            .sum::<N>();
+        println!("Sum: {}", sum);
     }
 
     Ok(())
