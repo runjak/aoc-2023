@@ -1,4 +1,4 @@
-use std::{error::Error, fs, iter};
+use std::{collections::HashMap, error::Error, fs, iter};
 
 static FIXED_ROCK: char = '#';
 static MOVABLE_ROCK: char = 'O';
@@ -110,8 +110,56 @@ fn spin_cycle(lines: &Vec<String>) -> Vec<String> {
     move_east(&move_south(&move_west(&move_north(lines))))
 }
 
+fn spin_cycles(lines: &Vec<String>) -> Vec<String> {
+    let mut lines = lines.clone();
+
+    type Move = u32;
+    let total_moves: Move = 1_000_000_000;
+
+    let mut inputs_at_moves: HashMap<String, Move> = HashMap::from([(lines.join("\n"), 0)]);
+    let mut remaining_moves: Move = 0;
+
+    for moves_so_far in 1..=total_moves {
+        let next_lines = spin_cycle(&lines);
+        let key = next_lines.join("\n");
+
+        if inputs_at_moves.contains_key(&key) {
+            // Time travel as far as we can.
+            remaining_moves = total_moves - moves_so_far;
+            let cycle_length = moves_so_far - *inputs_at_moves.get(&key).unwrap();
+            remaining_moves %= cycle_length;
+            break;
+        } else {
+            inputs_at_moves.insert(key, moves_so_far);
+        }
+
+        lines = next_lines;
+    }
+
+    for _ in 0..=remaining_moves {
+        lines = spin_cycle(&lines);
+    }
+
+    lines
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented.");
+    let paths = ["./inputs/14/example-1.txt", "./inputs/14/input.txt"];
+
+    for path in paths {
+        println!("Handling file: {}", path);
+
+        let contents = fs::read_to_string(path)?;
+        let contents = contents
+            .lines()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
+
+        let moved = spin_cycles(&contents);
+        let load = compute_load(&moved);
+
+        println!("Computed load: {}", load);
+    }
 
     Ok(())
 }
@@ -214,8 +262,8 @@ mod tests {
             spin_cycle(&spin_cycle(&spin_cycle(&input))),
         ];
 
-        assert_eq!(actual_1,expected_1);
-        assert_eq!(actual_2,expected_2);
-        assert_eq!(actual_3,expected_3);
+        assert_eq!(actual_1, expected_1);
+        assert_eq!(actual_2, expected_2);
+        assert_eq!(actual_3, expected_3);
     }
 }
