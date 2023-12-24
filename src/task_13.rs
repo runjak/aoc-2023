@@ -1,4 +1,4 @@
-use std::{error::Error, fs};
+use std::{collections::HashMap, error::Error, fs};
 
 // A pattern is made up of several lines of strings.
 type Pattern = Vec<String>;
@@ -112,29 +112,66 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn find_smudge_horizontal_symmetry(pattern: &Pattern) -> Vec<N> {
+fn symmetry_violations(line: &String, candidates: &HashMap<usize, usize>) -> HashMap<usize, usize> {
+    let mut violations: HashMap<usize, usize> = HashMap::new();
+
+    for candidate in candidates.keys() {
+        let (prefix, suffix) = line.split_at(candidate + 1);
+
+        let difference_count = prefix
+            .chars()
+            .rev()
+            .zip(suffix.chars())
+            .filter(|(a, b)| a != b)
+            .count();
+
+        violations.insert(*candidate, difference_count);
+    }
+
+    violations
+}
+
+fn find_smudge_horizontal_symmetry(pattern: &Pattern) -> Option<N> {
     if pattern.is_empty() {
-        return Vec::new();
+        return None;
     }
 
     let width = pattern[0].len();
-    let mut candidates = (0..width - 1).collect::<Vec<_>>();
-    let mut can_skip = true;
+    let mut candidates: HashMap<usize, usize> = (0..width - 1).map(|k| (k, 0)).collect();
 
     for line in pattern {
-        let next_candidates = filter_symmetries(line, &candidates);
+        let violations = symmetry_violations(line, &candidates);
 
-        if can_skip && next_candidates.len() < 2 {
-            can_skip = false;
-        } else {
-            candidates = next_candidates;
+        for (k, v) in violations {
+            let v = v + candidates.get(&k).unwrap_or(&0);
+
+            if v >= 2 {
+                candidates.remove(&k);
+            } else {
+                candidates.insert(k, v);
+            }
         }
     }
 
     candidates
         .iter()
-        .filter_map(|candidate| N::try_from(*candidate).ok())
-        .collect()
+        .filter(|(k, v)| **v == 1)
+        .filter_map(|(k, _)| N::try_from(*k).ok())
+        .next()
+}
+
+fn find_smudge_vertical_symmetry(pattern: &Pattern) -> Option<N> {
+    find_smudge_horizontal_symmetry(&transpose_pattern(pattern))
+}
+
+fn score_smudge_pattern(pattern: &Pattern) -> N {
+    find_smudge_horizontal_symmetry(pattern)
+        .map(|n| n + 1)
+        .unwrap_or_else(|| {
+            find_smudge_vertical_symmetry(pattern)
+                .map(|n| 100 * (n + 1))
+                .unwrap_or(0)
+        })
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
@@ -146,15 +183,11 @@ fn second() -> Result<(), Box<dyn Error>> {
         let contents = fs::read_to_string(path)?;
         let input = parse_input(contents);
 
-        for pattern in input {
-            println!("Looking at pattern:");
-            pattern.iter().for_each(|line| println!("  {}", line));
-
-            let foo = find_smudge_horizontal_symmetry(&pattern);
-            println!("Found symmetries: {:?}", foo);
-        }
-
-        break;
+        let sum = input
+            .iter()
+            .map(|pattern| score_smudge_pattern(pattern))
+            .sum::<N>();
+        println!("Sum: {}", sum);
     }
 
     Ok(())
