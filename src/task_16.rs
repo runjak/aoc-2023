@@ -76,8 +76,8 @@ fn shine_on(field: &Field, laser: &Laser) -> Vec<Laser> {
 }
 
 fn crazy_diamond(field: &Field) -> HashSet<Position> {
-    let initial_laser: Laser = ((0, 0), Direction::Right);
-    let mut visited: HashSet<Laser> = HashSet::from([initial_laser]);
+    let initial_laser: Laser = ((-1, 0), Direction::Right);
+    let mut visited: HashSet<Laser> = HashSet::from([]);
     let mut lasers: Vec<Laser> = Vec::from([initial_laser]);
 
     while !lasers.is_empty() {
@@ -85,11 +85,10 @@ fn crazy_diamond(field: &Field) -> HashSet<Position> {
             break;
         };
 
-        visited.insert(laser);
-
         for next_laser in shine_on(field, &laser) {
             if !visited.contains(&next_laser) {
                 lasers.push(next_laser);
+                visited.insert(next_laser);
             }
         }
     }
@@ -97,14 +96,44 @@ fn crazy_diamond(field: &Field) -> HashSet<Position> {
     visited.iter().map(|(p, _)| -> Position { *p }).collect()
 }
 
+#[allow(dead_code)]
+fn print_energized(field: &Field, energized: &HashSet<Position>) {
+    let max_x = *field.keys().map(|(x, _)| x).max().unwrap_or(&0);
+    let max_y = *field.keys().map(|(_, y)| y).max().unwrap_or(&0);
+
+    let lines = (0..=max_y)
+        .map(|y| -> String {
+            (0..=max_x)
+                .map(|x| -> char {
+                    let position = &(x, y);
+
+                    let x = *field.get(position).unwrap_or(&'.');
+
+                    if x != '.' {
+                        return x;
+                    }
+
+                    if energized.contains(position) {
+                        '#'
+                    } else {
+                        '.'
+                    }
+                })
+                .collect()
+        })
+        .collect::<Vec<_>>();
+
+    println!("{}", lines.join("\n"));
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/16/example-1.txt", "./inputs/16/input.txt"];
 
     for path in paths {
         let input = fs::read_to_string(path)?;
-        let input = parse_input(input);
+        let input = &parse_input(input);
 
-        let energized = crazy_diamond(&input);
+        let energized = crazy_diamond(input);
 
         println!("Energized positions: {}", energized.len());
     }
