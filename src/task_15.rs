@@ -25,9 +25,8 @@ fn first() -> Result<(), Box<dyn Error>> {
             .map(|item| item.to_string())
             .collect::<Vec<_>>();
 
-        println!("Got items: {:?}", contents);
-
-        break;
+        let sum: u32 = contents.iter().map(|c| u32::from(hash(c))).sum();
+        println!("Sum: {}", sum);
     }
 
     Ok(())
