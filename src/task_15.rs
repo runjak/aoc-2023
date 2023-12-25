@@ -1,4 +1,4 @@
-use std::{error::Error, fs};
+use std::{collections::HashMap, error::Error, fs};
 
 fn hash(input: &str) -> u8 {
     let mut current_value: u8 = 0;
@@ -32,7 +32,7 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Command {
     Remove,
     Set(i32),
@@ -60,6 +60,25 @@ fn parse_input(contents: String) -> Input {
             Some((label, Command::Set(lens)))
         })
         .collect()
+}
+
+fn input_per_box(input: &Input) -> HashMap<u8, Input> {
+    let mut per_box: HashMap<u8, Input> = HashMap::new();
+
+    for (label, command) in input {
+        let box_number = hash(label);
+
+        match per_box.get_mut(&box_number) {
+            Some(existing) => {
+                existing.push((label.to_string(), *command));
+            }
+            None => {
+                per_box.insert(box_number, Vec::from([(label.to_string(), *command)]));
+            }
+        }
+    }
+
+    per_box
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
