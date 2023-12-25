@@ -20,7 +20,7 @@ fn parse_input(input: String) -> Field {
         .collect()
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 enum Direction {
     Up,
     Down,
@@ -76,19 +76,25 @@ fn shine_on(field: &Field, laser: &Laser) -> Vec<Laser> {
 }
 
 fn crazy_diamond(field: &Field) -> HashSet<Position> {
-    let mut energized: HashSet<Position> = HashSet::new();
-    let mut lasers: Vec<Laser> = Vec::from([((0, 0), Direction::Right)]);
+    let initial_laser: Laser = ((0, 0), Direction::Right);
+    let mut visited: HashSet<Laser> = HashSet::from([initial_laser]);
+    let mut lasers: Vec<Laser> = Vec::from([initial_laser]);
 
     while !lasers.is_empty() {
         let Some(laser) = lasers.pop() else {
             break;
         };
 
-        energized.insert(laser.0);
-        lasers.append(&mut shine_on(field, &laser));
+        visited.insert(laser);
+
+        for next_laser in shine_on(field, &laser) {
+            if !visited.contains(&next_laser) {
+                lasers.push(next_laser);
+            }
+        }
     }
 
-    energized
+    visited.iter().map(|(p, _)| -> Position { *p }).collect()
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
@@ -100,9 +106,7 @@ fn first() -> Result<(), Box<dyn Error>> {
 
         let energized = crazy_diamond(&input);
 
-        println!("Counting energized positions: {}", energized.len());
-
-        break;
+        println!("Energized positions: {}", energized.len());
     }
 
     Ok(())
