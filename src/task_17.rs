@@ -21,11 +21,18 @@ fn parse_input(input: String) -> Field {
         .collect()
 }
 
-fn target_position(field: &Field) -> Position {
+fn get_max_position(field: &Field) -> Position {
     let max_x = field.keys().map(|(x, _)| *x).max().unwrap_or(0);
     let max_y = field.keys().map(|(_, y)| *y).max().unwrap_or(0);
 
     (max_x, max_y)
+}
+
+fn next_positions((x, y): &Position, (max_x, max_y): &Position) -> Vec<Position> {
+    [(x - 1, *y), (x + 1, *y), (*x, y - 1), (*x, y + 1)]
+        .into_iter()
+        .filter(|(x, y)| x >= &0 && y >= &0 && x <= max_x && y <= max_y)
+        .collect()
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
