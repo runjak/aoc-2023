@@ -32,8 +32,49 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[derive(Debug)]
+enum Command {
+    Remove,
+    Set(i32),
+}
+
+type Input = Vec<(String, Command)>;
+
+fn parse_input(contents: String) -> Input {
+    contents
+        .split(",")
+        .filter_map(|chunk| -> Option<(String, Command)> {
+            if chunk.ends_with("-") {
+                let label = chunk[0..chunk.len() - 1].to_string();
+
+                return Some((label, Command::Remove));
+            }
+
+            let Some((label, lens)) = chunk.split_once("=") else {
+                return None;
+            };
+
+            let label = label.to_string();
+            let lens = lens.parse::<i32>().ok()?;
+
+            Some((label, Command::Set(lens)))
+        })
+        .collect()
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = ["./inputs/15/example-1.txt", "./inputs/15/input.txt"];
+
+    for path in paths {
+        println!("Handling file: {}", path);
+
+        let contents = fs::read_to_string(path)?;
+        let contents = parse_input(contents);
+
+        println!("Got input:\n  {:?}", contents);
+
+        break;
+    }
 
     Ok(())
 }
