@@ -1,15 +1,52 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error, fs};
+
+type Position = (i32, i32);
+type Field = HashMap<Position, i32>;
+
+fn parse_input(input: String) -> Field {
+    input
+        .lines()
+        .enumerate()
+        .flat_map(|(y, line)| -> Vec<(Position, i32)> {
+            line.chars()
+                .enumerate()
+                .map(|(x, c)| -> (Position, i32) {
+                    let position: Position = (i32::try_from(x).unwrap(), i32::try_from(y).unwrap());
+                    let value = c.to_string().parse::<i32>().unwrap();
+
+                    (position, value)
+                })
+                .collect()
+        })
+        .collect()
+}
+
+fn target_position(field: &Field) -> Position {
+    let max_x = field.keys().map(|(x, _)| *x).max().unwrap_or(0);
+    let max_y = field.keys().map(|(_, y)| *y).max().unwrap_or(0);
+
+    (max_x, max_y)
+}
 
 fn first() -> Result<(), Box<dyn Error>> {
-  println!("To be implemented.");
+    let paths = ["./inputs/17/example-1.txt", "./inputs/17/input.txt"];
 
-  Ok(())
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let input = parse_input(input);
+
+        println!("Got input:\n{:?}", input);
+
+        break;
+    }
+
+    Ok(())
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
-  println!("To be implemented.");
+    println!("To be implemented.");
 
-  Ok(())
+    Ok(())
 }
 
 pub fn main() -> Result<(), Box<dyn Error>> {
