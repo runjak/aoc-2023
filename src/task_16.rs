@@ -75,10 +75,9 @@ fn shine_on(field: &Field, laser: &Laser) -> Vec<Laser> {
         .collect()
 }
 
-fn crazy_diamond(field: &Field) -> HashSet<Position> {
-    let initial_laser: Laser = ((-1, 0), Direction::Right);
+fn crazy_diamond(field: &Field, initial_laser: &Laser) -> HashSet<Position> {
     let mut visited: HashSet<Laser> = HashSet::from([]);
-    let mut lasers: Vec<Laser> = Vec::from([initial_laser]);
+    let mut lasers: Vec<Laser> = Vec::from([*initial_laser]);
 
     while !lasers.is_empty() {
         let Some(laser) = lasers.pop() else {
@@ -133,7 +132,8 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let input = &parse_input(input);
 
-        let energized = crazy_diamond(input);
+        let initial_laser: Laser = ((-1, 0), Direction::Right);
+        let energized = crazy_diamond(input, &initial_laser);
 
         println!("Energized positions: {}", energized.len());
     }
@@ -141,8 +141,37 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn initial_lasers(field: &Field) -> Vec<Laser> {
+    let max_x = *field.keys().map(|(x, _)| x).max().unwrap_or(&0);
+    let max_y = *field.keys().map(|(_, y)| y).max().unwrap_or(&0);
+
+    let top_lasers = (0..=max_x).map(|x| -> Laser { ((x, -1), Direction::Down) });
+    let bottom_lasers = (0..=max_x).map(|x| -> Laser { ((x, max_y + 1), Direction::Up) });
+    let left_lasers = (0..=max_y).map(|y| -> Laser { ((-1, y), Direction::Right) });
+    let right_lasers = (0..=max_y).map(|y| -> Laser { ((max_x + 1, y), Direction::Left) });
+
+    top_lasers
+        .chain(bottom_lasers)
+        .chain(left_lasers)
+        .chain(right_lasers)
+        .collect()
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = ["./inputs/16/example-1.txt", "./inputs/16/input.txt"];
+
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let input = &parse_input(input);
+
+        let max_energized = initial_lasers(&input)
+            .iter()
+            .map(|laser| crazy_diamond(&input, laser).len())
+            .max()
+            .unwrap_or(0);
+
+        println!("Maximum energized positions: {}", max_energized);
+    }
 
     Ok(())
 }
@@ -160,7 +189,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::{collections::HashSet, fs};
 
-    use super::{crazy_diamond, parse_input};
+    use super::{crazy_diamond, parse_input, Direction, Laser};
 
     #[test]
     fn crazy_diamond_should_have_energized_match_example() {
@@ -174,7 +203,9 @@ mod tests {
 
         let input = fs::read_to_string("./inputs/16/example-1.txt").unwrap();
         let input = parse_input(input);
-        let actual = crazy_diamond(&input);
+
+        let initial_laser: Laser = ((-1, 0), Direction::Right);
+        let actual = crazy_diamond(&input, &initial_laser);
 
         assert_eq!(actual, expected);
     }
