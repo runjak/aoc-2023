@@ -126,3 +126,27 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::HashSet, fs};
+
+    use super::{crazy_diamond, parse_input};
+
+    #[test]
+    fn crazy_diamond_should_have_energized_match_example() {
+        let expected = fs::read_to_string("./inputs/16/expected-energized.txt").unwrap();
+        let expected = parse_input(expected);
+        let expected = expected
+            .iter()
+            .filter(|(_, c)| **c == '#')
+            .map(|(p, _)| *p)
+            .collect::<HashSet<_>>();
+
+        let input = fs::read_to_string("./inputs/16/example-1.txt").unwrap();
+        let input = parse_input(input);
+        let actual = crazy_diamond(&input);
+
+        assert_eq!(actual, expected);
+    }
+}
