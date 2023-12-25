@@ -1,4 +1,8 @@
-use std::{collections::HashMap, error::Error, fs};
+use std::{
+    collections::{HashMap, LinkedList},
+    error::Error,
+    fs,
+};
 
 fn hash(input: &str) -> u8 {
     let mut current_value: u8 = 0;
@@ -81,18 +85,77 @@ fn input_per_box(input: &Input) -> HashMap<u8, Input> {
     per_box
 }
 
+type Slot = (String, i32);
+type Slots = Vec<Slot>;
+
+fn apply_input(input: &Input) -> Slots {
+    let mut slots: Slots = Vec::new();
+
+    for (label, command) in input {
+        match command {
+            Command::Remove => {
+                slots = slots
+                    .iter()
+                    .filter(|(existing_label, _)| !existing_label.eq(label))
+                    .map(|(label, lens)| (label.to_string(), *lens))
+                    .collect();
+            }
+            Command::Set(lens) => {
+                let mut found = false;
+
+                slots = slots
+                    .iter()
+                    .map(|(existing_label, existing_lens)| -> Slot {
+                        if existing_label == label {
+                            found = true;
+
+                            (existing_label.to_string(), *lens)
+                        } else {
+                            (existing_label.to_string(), *existing_lens)
+                        }
+                    })
+                    .collect();
+
+                if !found {
+                    slots.push((label.to_string(), *lens));
+                }
+            }
+        }
+    }
+
+    slots
+}
+
+fn focusing_power(input: &Input) -> i32 {
+    let per_box = input_per_box(input);
+    let mut power: i32 = 0;
+
+    for (box_number, input) in per_box {
+        let box_number = i32::try_from(box_number).unwrap() + 1;
+        let slots = apply_input(&input);
+
+        for (slot_number, (_, lens)) in slots.iter().enumerate() {
+            let slot_number = i32::try_from(slot_number).unwrap() + 1;
+
+            power += box_number * slot_number * *lens;
+        }
+    }
+
+    power
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/15/example-1.txt", "./inputs/15/input.txt"];
 
     for path in paths {
         println!("Handling file: {}", path);
 
-        let contents = fs::read_to_string(path)?;
-        let contents = parse_input(contents);
+        let input = fs::read_to_string(path)?;
+        let input = parse_input(input);
 
-        println!("Got input:\n  {:?}", contents);
+        let power = focusing_power(&input);
 
-        break;
+        println!("Computed focusing power: {}", power);
     }
 
     Ok(())
