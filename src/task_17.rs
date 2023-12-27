@@ -1,10 +1,19 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BinaryHeap, HashMap},
     error::Error,
     fs,
 };
 
 type Position = (i32, i32);
+
+fn add_positions(x: &Position, y: &Position) -> Position {
+    (x.0 + y.0, x.1 + y.1)
+}
+
+fn negate_position(position: &Position) -> Position {
+    (-position.0, -position.1)
+}
+
 type Field = HashMap<Position, i32>;
 
 fn parse_input(input: String) -> Field {
@@ -25,127 +34,96 @@ fn parse_input(input: String) -> Field {
         .collect()
 }
 
-fn get_max_position(field: &Field) -> Position {
-    let max_x = field.keys().map(|(x, _)| *x).max().unwrap_or(0);
-    let max_y = field.keys().map(|(_, y)| *y).max().unwrap_or(0);
+fn max_position(field: &Field) -> Position {
+    let max_x = *field.keys().map(|(x, _)| x).max().unwrap_or(&0);
+    let max_y = *field.keys().map(|(_, y)| y).max().unwrap_or(&0);
 
     (max_x, max_y)
 }
 
-fn heuristic_cost(from: &Position, to: &Position) -> i32 {
-    /*
-    The heuristic must be admissible as per [1].
-    That is we need to never over-estimate the true cost.
-    A simple way to achieve this is to assume minimal (1) cost per field.
-    To get there we can just get away with calculating the manhattan distance.
-    [1]: https://en.wikipedia.org/wiki/A*_search_algorithm
-    */
-    (to.0 - from.0).abs() + (to.1 - from.1).abs()
+/*
+We want Djikstra, and we take inspiration from
+https://doc.rust-lang.org/std/collections/binary_heap/index.html
+*/
+
+#[derive(Debug, PartialEq, Eq)]
+struct State {
+    position: Position,
+    direction: Position,
+    velocity: i8,
+    cost: i32,
 }
 
-type Path = Vec<Position>;
-
-fn is_path_done(path: &Path, target: &Position) -> bool {
-    let Some(last) = path.last() else {
-        return false;
-    };
-
-    last == target
-}
-
-fn next_positions((x, y): &Position, (max_x, max_y): &Position) -> Vec<Position> {
-    [(x - 1, *y), (x + 1, *y), (*x, y - 1), (*x, y + 1)]
-        .into_iter()
-        .filter(|(x, y)| x >= &0 && y >= &0 && x <= max_x && y <= max_y)
-        .collect()
-}
-
-fn is_path_end_valid(path: &Path) -> bool {
-    /*
-    Check that the last 4 positions of the path are not in a line.
-    Also check that the path doesn't loop back on it's end.
-    */
-    if path.len() >= 3 {
-        let last_three = path[path.len() - 3..].iter().collect::<HashSet<_>>();
-
-        if last_three.len() < 3 {
-            return false;
-        }
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.cost.cmp(&self.cost)
     }
-
-    if path.len() >= 4 {
-        let last_four = path[path.len() - 4..].to_vec();
-        let different_x = last_four
-            .iter()
-            .map(|(x, _)| *x)
-            .collect::<HashSet<_>>()
-            .len();
-        let different_y = last_four
-            .iter()
-            .map(|(_, y)| *y)
-            .collect::<HashSet<_>>()
-            .len();
-
-        if different_x == 1 || different_y == 1 {
-            // Forbidden length of a segment detected.
-            return false;
-        }
-    }
-
-    true
 }
 
-type Cost = i32;
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
-fn next_paths_and_costs(
-    field: &Field,
-    max_position: &Position,
-    path: &Path,
-    cost: Cost,
-) -> Vec<(Path, Cost)> {
-    let Some(last_position) = path.last() else {
-        return Vec::new();
-    };
+fn cheapest_path(field: &Field, from: &Position, to: &Position) -> Option<i32> {
+    let mut position_to_cost: HashMap<Position, i32> = HashMap::from([(*from, 0)]);
+    let mut heap = BinaryHeap::from([State {
+        position: *from,
+        direction: (0, 0),
+        velocity: 0,
+        cost: 0,
+    }]);
 
-    next_positions(last_position, max_position)
-        .into_iter()
-        .filter_map(|next_position| -> Option<(Path, Cost)> {
-            let mut next_path = path.clone();
-            next_path.push(next_position);
+    while let Some(state) = heap.pop() {
+        if &state.position == to {
+            return Some(state.cost);
+        }
 
-            if !is_path_end_valid(&next_path) {
-                return None;
+        let mut next_states: Vec<State> = Vec::new();
+
+        if state.velocity < 3 {
+            let next_position = add_positions(&state.position, &state.direction);
+
+            if let Some(next_cost) = field.get(&next_position) {
+                next_states.push(State {
+                    position: next_position,
+                    direction: state.direction,
+                    velocity: state.velocity + 1,
+                    cost: state.cost + next_cost,
+                });
+            }
+        }
+
+        let side_directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+            .into_iter()
+            .filter(|candidate| {
+                candidate != &state.direction && candidate != &negate_position(&state.direction)
+            });
+
+        for side_direction in side_directions {
+            let side_position = add_positions(&state.position, &side_direction);
+            if let Some(next_cost) = field.get(&side_position) {
+                next_states.push(State {
+                    position: side_direction,
+                    direction: side_direction,
+                    velocity: 1,
+                    cost: state.cost + next_cost,
+                });
+            }
+        }
+
+        for next_state in next_states {
+            //Skip next_state, if we know a cheaper path already
+            if let Some(existing_cost) = position_to_cost.get(&next_state.position) {
+                if existing_cost <= &next_state.cost {
+                    continue;
+                }
             }
 
-            let next_cost = cost + *field.get(&next_position).unwrap_or(&0);
-
-            Some((next_path, next_cost))
-        })
-        .collect()
-}
-
-fn find_path(field: &Field, from: &Position, to: &Position) -> Option<(Path, Cost)> {
-    let mut paths_and_costs: Vec<(Path, Cost)> = Vec::from([(Vec::from([*from]), 0)]);
-
-    while !paths_and_costs.is_empty() {
-        // Sort paths_and_costs to have best candidate at the end
-        paths_and_costs.sort_by_key(|(path, cost)| -> i32 {
-            let path_end = path.last().unwrap(); // Assume non-empty paths
-
-            // Returning negative value, to have best candidate at the ned.
-            -(heuristic_cost(path_end, to) + *cost)
-        });
-
-        // Assume existing path and cost as per !..is_empty()
-        let (path, cost) = paths_and_costs.pop().unwrap();
-
-        // Check if best current path is the solution
-        if is_path_done(&path, to) {
-            return Some((path.clone(), cost));
+            position_to_cost.insert(next_state.position, next_state.cost);
+            heap.push(next_state);
         }
-
-        // Find next paths
-        paths_and_costs.append(&mut next_paths_and_costs(field, to, &path, cost));
     }
 
     None
@@ -158,10 +136,10 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let field = parse_input(input);
 
-        let target = get_max_position(&field);
-        let foo = find_path(&field, &(0, 0), &target);
+        let target = max_position(&field);
+        let cost = cheapest_path(&field, &(0, 0), &target);
 
-        println!("Got something cool:\n{:?}", foo);
+        println!("Got something: {:?}", cost);
 
         break;
     }
