@@ -69,7 +69,7 @@ impl PartialOrd for State {
 fn get_next_states(field: &Field, state: &State) -> Vec<State> {
     let mut next_states: Vec<State> = Vec::new();
 
-    if state.velocity < 3 {
+    if state.velocity <= 3 {
         let next_position = add_positions(&state.position, &state.direction);
 
         if let Some(next_cost) = field.get(&next_position) {
