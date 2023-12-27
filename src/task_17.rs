@@ -165,8 +165,106 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn scale_position((x, y): &Position, scale: i32) -> Position {
+    (x * scale, y * scale)
+}
+
+fn get_next_ultra_states(field: &Field, state: &State) -> Vec<State> {
+    let mut next_states: Vec<State> = Vec::new();
+
+    if state.velocity < 10 && state.position != (0, 0) {
+        let next_position = add_positions(&state.position, &state.direction);
+
+        if let Some(next_cost) = field.get(&next_position) {
+            next_states.push(State {
+                position: next_position,
+                direction: state.direction,
+                velocity: state.velocity + 1,
+                cost: state.cost + next_cost,
+            });
+        }
+    }
+
+    let side_directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        .into_iter()
+        .filter(|candidate| {
+            candidate != &state.direction && candidate != &negate_position(&state.direction)
+        });
+
+    for side_direction in side_directions {
+        let side_position = add_positions(&state.position, &scale_position(&side_direction, 4));
+
+        let next_costs = (1..=4).filter_map(|scale| {
+            field.get(&add_positions(
+                &state.position,
+                &scale_position(&side_direction, scale),
+            ))
+        }).collect::<Vec<_>>();
+        
+        if next_costs.len() == 4 {
+            let next_cost = next_costs.into_iter().sum::<i32>();
+
+            next_states.push(State {
+                position: side_position,
+                direction: side_direction,
+                velocity: 4,
+                cost: state.cost + next_cost,
+            });
+        }
+    }
+
+    next_states
+}
+
+fn cheapest_ultra_path(field: &Field, from: &Position, to: &Position) -> Option<State> {
+    type Seen = (i32, i32, i32, i32, i8);
+    fn state_to_seen(state: &State) -> Seen {
+        let (x, y) = state.position;
+        let (dx, dy) = state.direction;
+        (x, y, dx, dy, state.velocity)
+    }
+
+    let state = initial_state(from);
+    let mut seen_at_cost: HashMap<Seen, i32> = HashMap::from([(state_to_seen(&state), 0)]);
+    let mut heap = BinaryHeap::from([state]);
+
+    while let Some(state) = heap.pop() {
+        if &state.position == to {
+            return Some(state);
+        }
+
+        let next_states = get_next_ultra_states(field, &state);
+
+        for next_state in next_states {
+            let seen = state_to_seen(&next_state);
+            //Skip next_state, if we know a cheaper path already
+            if let Some(existing_cost) = seen_at_cost.get(&seen) {
+                if existing_cost <= &next_state.cost {
+                    continue;
+                }
+            }
+
+            seen_at_cost.insert(seen, next_state.cost);
+            heap.push(next_state);
+        }
+    }
+
+    None
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented.");
+    let paths = ["./inputs/17/example-1.txt", "./inputs/17/input.txt"];
+
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let field = parse_input(input);
+
+        let target = max_position(&field);
+        let cheapest_state = cheapest_ultra_path(&field, &(0, 0), &target);
+        let cost = cheapest_state.map(|s| s.cost).unwrap_or(-1);
+
+        println!("Found cost: {}", cost);
+    }
 
     Ok(())
 }
