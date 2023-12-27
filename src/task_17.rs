@@ -78,7 +78,7 @@ fn initial_state(position: &Position) -> State {
 fn get_next_states(field: &Field, state: &State) -> Vec<State> {
     let mut next_states: Vec<State> = Vec::new();
 
-    if state.velocity <= 3 {
+    if state.velocity <= 3 && state.position != (0, 0) {
         let next_position = add_positions(&state.position, &state.direction);
 
         if let Some(next_cost) = field.get(&next_position) {
@@ -170,4 +170,34 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     second()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{get_next_states, initial_state, parse_input, State};
+
+    #[test]
+    fn get_next_states_should_find_initial_successors() {
+        let field = parse_input("12\n34".to_string());
+        let state = &initial_state(&(0, 0));
+
+        let initial_successors = get_next_states(&field, state);
+
+        let expected = Vec::from([
+            State {
+                position: (1, 0),
+                direction: (1, 0),
+                velocity: 1,
+                cost: 2,
+            },
+            State {
+                position: (0, 1),
+                direction: (0, 1),
+                velocity: 1,
+                cost: 3,
+            },
+        ]);
+
+        assert_eq!(initial_successors, expected);
+    }
 }
