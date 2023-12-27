@@ -42,7 +42,7 @@ fn max_position(field: &Field) -> Position {
 }
 
 /*
-We want Djikstra, and we take inspiration from
+We want Dijkstra, and we take inspiration from
 https://doc.rust-lang.org/std/collections/binary_heap/index.html
 */
 
@@ -63,6 +63,15 @@ impl Ord for State {
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+fn initial_state(position: &Position) -> State {
+    State {
+        position: *position,
+        direction: (0, 0),
+        velocity: 0,
+        cost: 0,
     }
 }
 
@@ -105,12 +114,7 @@ fn get_next_states(field: &Field, state: &State) -> Vec<State> {
 
 fn cheapest_path(field: &Field, from: &Position, to: &Position) -> Option<i32> {
     let mut position_to_cost: HashMap<Position, i32> = HashMap::from([(*from, 0)]);
-    let mut heap = BinaryHeap::from([State {
-        position: *from,
-        direction: (0, 0),
-        velocity: 0,
-        cost: 0,
-    }]);
+    let mut heap = BinaryHeap::from([initial_state(from)]);
 
     while let Some(state) = heap.pop() {
         if &state.position == to {
