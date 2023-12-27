@@ -66,6 +66,43 @@ impl PartialOrd for State {
     }
 }
 
+fn get_next_states(field: &Field, state: &State) -> Vec<State> {
+    let mut next_states: Vec<State> = Vec::new();
+
+    if state.velocity < 3 {
+        let next_position = add_positions(&state.position, &state.direction);
+
+        if let Some(next_cost) = field.get(&next_position) {
+            next_states.push(State {
+                position: next_position,
+                direction: state.direction,
+                velocity: state.velocity + 1,
+                cost: state.cost + next_cost,
+            });
+        }
+    }
+
+    let side_directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        .into_iter()
+        .filter(|candidate| {
+            candidate != &state.direction && candidate != &negate_position(&state.direction)
+        });
+
+    for side_direction in side_directions {
+        let side_position = add_positions(&state.position, &side_direction);
+        if let Some(next_cost) = field.get(&side_position) {
+            next_states.push(State {
+                position: side_position,
+                direction: side_direction,
+                velocity: 1,
+                cost: state.cost + next_cost,
+            });
+        }
+    }
+
+    next_states
+}
+
 fn cheapest_path(field: &Field, from: &Position, to: &Position) -> Option<i32> {
     let mut position_to_cost: HashMap<Position, i32> = HashMap::from([(*from, 0)]);
     let mut heap = BinaryHeap::from([State {
@@ -80,38 +117,7 @@ fn cheapest_path(field: &Field, from: &Position, to: &Position) -> Option<i32> {
             return Some(state.cost);
         }
 
-        let mut next_states: Vec<State> = Vec::new();
-
-        if state.velocity < 3 {
-            let next_position = add_positions(&state.position, &state.direction);
-
-            if let Some(next_cost) = field.get(&next_position) {
-                next_states.push(State {
-                    position: next_position,
-                    direction: state.direction,
-                    velocity: state.velocity + 1,
-                    cost: state.cost + next_cost,
-                });
-            }
-        }
-
-        let side_directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-            .into_iter()
-            .filter(|candidate| {
-                candidate != &state.direction && candidate != &negate_position(&state.direction)
-            });
-
-        for side_direction in side_directions {
-            let side_position = add_positions(&state.position, &side_direction);
-            if let Some(next_cost) = field.get(&side_position) {
-                next_states.push(State {
-                    position: side_direction,
-                    direction: side_direction,
-                    velocity: 1,
-                    cost: state.cost + next_cost,
-                });
-            }
-        }
+        let next_states = get_next_states(field, &state);
 
         for next_state in next_states {
             //Skip next_state, if we know a cheaper path already
@@ -137,9 +143,9 @@ fn first() -> Result<(), Box<dyn Error>> {
         let field = parse_input(input);
 
         let target = max_position(&field);
-        let cost = cheapest_path(&field, &(0, 0), &target);
+        let cost = cheapest_path(&field, &(0, 0), &target).unwrap_or(-1);
 
-        println!("Got something: {:?}", cost);
+        println!("Found cost: {}", cost);
 
         break;
     }
