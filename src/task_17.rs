@@ -174,7 +174,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{get_next_states, initial_state, parse_input, State};
+    use super::{cheapest_path, get_next_states, initial_state, parse_input, State};
 
     #[test]
     fn get_next_states_should_find_initial_successors() {
@@ -199,5 +199,36 @@ mod tests {
         ]);
 
         assert_eq!(initial_successors, expected);
+    }
+
+    #[test]
+    fn should_correctly_compute_a_simple_cheapest_path() {
+        let field = parse_input("12\n34".to_string());
+
+        let expected = Some(6);
+        let actual = cheapest_path(&field, &(0, 0), &(1, 1));
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn should_correctly_find_a_velocity_maxing_cheapest_path() {
+        let field = parse_input(["111111", "222221"].join("\n"));
+
+        /*
+        Our field is this:
+        111111
+        222221
+        We expect a route like this:
+        1>>>111
+        222v>>>
+        We expect cost like this:
+        1+1+1+2+2+1 = 8
+        */
+
+        let expected = Some(8);
+        let actual = cheapest_path(&field, &(0, 0), &(5, 1));
+
+        assert_eq!(actual, expected);
     }
 }
