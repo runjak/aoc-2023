@@ -1,7 +1,7 @@
 use std::{
     collections::{BinaryHeap, HashMap},
     error::Error,
-    fs, string,
+    fs,
 };
 
 type Position = (i32, i32);
@@ -113,8 +113,16 @@ fn get_next_states(field: &Field, state: &State) -> Vec<State> {
 }
 
 fn cheapest_path(field: &Field, from: &Position, to: &Position) -> Option<State> {
-    let mut position_to_cost: HashMap<Position, i32> = HashMap::from([(*from, 0)]);
-    let mut heap = BinaryHeap::from([initial_state(from)]);
+    type Seen = (i32, i32, i32, i32, i8);
+    fn state_to_seen(state: &State) -> Seen {
+        let (x, y) = state.position;
+        let (dx, dy) = state.direction;
+        (x, y, dx, dy, state.velocity)
+    }
+
+    let state = initial_state(from);
+    let mut seen_at_cost: HashMap<Seen, i32> = HashMap::from([(state_to_seen(&state), 0)]);
+    let mut heap = BinaryHeap::from([state]);
 
     while let Some(state) = heap.pop() {
         if &state.position == to {
@@ -124,14 +132,15 @@ fn cheapest_path(field: &Field, from: &Position, to: &Position) -> Option<State>
         let next_states = get_next_states(field, &state);
 
         for next_state in next_states {
+            let seen = state_to_seen(&next_state);
             //Skip next_state, if we know a cheaper path already
-            if let Some(existing_cost) = position_to_cost.get(&next_state.position) {
+            if let Some(existing_cost) = seen_at_cost.get(&seen) {
                 if existing_cost <= &next_state.cost {
                     continue;
                 }
             }
 
-            position_to_cost.insert(next_state.position, next_state.cost);
+            seen_at_cost.insert(seen, next_state.cost);
             heap.push(next_state);
         }
     }
@@ -151,8 +160,6 @@ fn first() -> Result<(), Box<dyn Error>> {
         let cost = cheapest_state.map(|s| s.cost).unwrap_or(-1);
 
         println!("Found cost: {}", cost);
-
-        break;
     }
 
     Ok(())
@@ -173,63 +180,9 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn trace_cheapest_path(field: &Field, from: &Position, to: &Position) -> Vec<State> {
-    let mut trace = Vec::new();
-
-    let mut to: Position = *to;
-    while &to != from {
-        let Some(state) = cheapest_path(field, from, &to) else {
-            break;
-        };
-
-        to = add_positions(&to, &negate_position(&state.direction));
-
-        trace.push(state);
-    }
-
-    trace
-}
-
-fn stringify_field_and_states(field: &Field, states: &Vec<State>) -> String {
-    let (max_x, max_y) = max_position(field);
-    let mut field = field
-        .into_iter()
-        .map(|(position, cost)| -> (Position, String) { (*position, cost.to_string()) })
-        .collect::<HashMap<_, _>>();
-
-    for state in states {
-        let s = match state.direction {
-            (1, 0) => ">",
-            (0, 1) => "v",
-            (-1, 0) => "<",
-            (0, -1) => "^",
-            (_, _) => ".",
-        }
-        .to_string();
-
-        field.insert(state.position, s);
-    }
-
-    let mut lines: Vec<String> = Vec::new();
-    for y in 0..=max_y {
-        let line = (0..=max_x)
-            .map(|x| -> String { field.get(&(x, y)).unwrap_or(&"?".to_string()).to_string() })
-            .collect::<Vec<_>>();
-
-        lines.push(line.concat());
-    }
-
-    lines.join("\n")
-}
-
 #[cfg(test)]
 mod tests {
-    use std::{error::Error, fs};
-
-    use super::{
-        cheapest_path, get_next_states, initial_state, max_position, parse_input,
-        stringify_field_and_states, trace_cheapest_path, State,
-    };
+    use super::{cheapest_path, get_next_states, initial_state, parse_input, State};
 
     #[test]
     fn get_next_states_should_find_initial_successors() {
@@ -285,23 +238,5 @@ mod tests {
         let actual = cheapest_path(&field, &(0, 0), &(5, 1)).map(|s| s.cost);
 
         assert_eq!(actual, expected);
-    }
-
-    #[test]
-    fn cheapest_path_should_find_same_path_as_example() -> Result<(), Box<dyn Error>> {
-        let example = fs::read_to_string("./inputs/17/example-1.txt")?;
-        let example = parse_input(example);
-
-        let expected = fs::read_to_string("./inputs/17/trace-1.txt")?;
-
-        let to = &max_position(&example);
-        let trace = trace_cheapest_path(&example, &(0, 0), to);
-        let actual = stringify_field_and_states(&example, &trace);
-
-        println!("Discovered the following path:\n{}", actual);
-
-        assert_eq!(actual, expected);
-
-        Ok(())
     }
 }
