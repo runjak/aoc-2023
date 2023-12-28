@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    error::Error,
-    fs,
-};
+use std::{collections::HashSet, error::Error, fs};
 
 #[derive(Debug)]
 enum Direction {
@@ -52,7 +48,7 @@ fn parse_input(input: String) -> Vec<Dig> {
 }
 
 type Position = (i32, i32);
-type Trench = HashMap<Position, Color>;
+type Trench = HashSet<Position>;
 
 fn apply_direction((x, y): &Position, direction: &Direction) -> Position {
     match direction {
@@ -65,12 +61,12 @@ fn apply_direction((x, y): &Position, direction: &Direction) -> Position {
 
 fn dig_trench(input: &Vec<Dig>) -> Trench {
     let mut current_position: Position = (0, 0);
-    let mut lagoon: Trench = HashMap::from([(current_position, "".to_string())]);
+    let mut lagoon: Trench = HashSet::from([current_position]);
 
     for dig in input {
         for _ in 0..dig.length {
             current_position = apply_direction(&current_position, &dig.direction);
-            lagoon.insert(current_position, dig.color.to_string());
+            lagoon.insert(current_position);
         }
     }
 
@@ -78,28 +74,26 @@ fn dig_trench(input: &Vec<Dig>) -> Trench {
 }
 
 fn shift_positive(trench: &Trench) -> Trench {
-    let min_x = trench.keys().map(|(x, _)| x).min().unwrap_or(&0);
-    let min_y = trench.keys().map(|(_, y)| y).min().unwrap_or(&0);
+    let min_x = trench.iter().map(|(x, _)| x).min().unwrap_or(&0);
+    let min_y = trench.iter().map(|(_, y)| y).min().unwrap_or(&0);
 
     trench
         .iter()
-        .map(|((x, y), c)| -> (Position, Color) { ((x - min_x, y - min_y), c.to_string()) })
+        .map(|(x, y)| -> Position { (x - min_x, y - min_y) })
         .collect()
 }
 
-type Interior = HashSet<Position>;
-
-fn dig_interior(trench: &Trench) -> Interior {
+fn dig_interior(trench: &Trench) -> Trench {
     let trench = shift_positive(trench);
 
-    let outside_x = *trench.keys().map(|(x, _)| x).max().unwrap_or(&0) + 1;
-    let outside_y = *trench.keys().map(|(_, y)| y).max().unwrap_or(&0) + 1;
+    let outside_x = *trench.iter().map(|(x, _)| x).max().unwrap_or(&0) + 1;
+    let outside_y = *trench.iter().map(|(_, y)| y).max().unwrap_or(&0) + 1;
 
-    let mut interior: Interior = (-1..=outside_x + 1)
+    let mut interior: Trench = (-1..=outside_x + 1)
         .flat_map(|x| -> Vec<Position> { (-1..=outside_y).map(|y| (x, y)).collect() })
         .collect();
 
-    for trench_position in trench.keys() {
+    for trench_position in trench.iter() {
         interior.remove(trench_position);
     }
 
@@ -121,7 +115,7 @@ fn dig_interior(trench: &Trench) -> Interior {
         }
     }
 
-    for trench_position in trench.keys() {
+    for trench_position in trench.iter() {
         interior.insert(*trench_position);
     }
 
@@ -129,7 +123,7 @@ fn dig_interior(trench: &Trench) -> Interior {
 }
 
 #[allow(dead_code)]
-fn interior_to_string(interior: &Interior) -> String {
+fn interior_to_string(interior: &Trench) -> String {
     let max_x = *interior.iter().map(|(x, _)| x).max().unwrap_or(&0);
     let max_y = *interior.iter().map(|(_, y)| y).max().unwrap_or(&0);
 
@@ -185,11 +179,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        collections::{HashMap, HashSet},
-        error::Error,
-        fs,
-    };
+    use std::{collections::HashSet, error::Error, fs};
 
     use super::{dig_interior, dig_trench, interior_to_string, parse_input, Position, Trench};
 
@@ -198,10 +188,7 @@ mod tests {
         let input = fs::read_to_string("./inputs/18/example-1.txt")?;
         let input = parse_input(input);
 
-        let actual = dig_trench(&input)
-            .keys()
-            .map(|p| *p)
-            .collect::<HashSet<_>>();
+        let actual = dig_trench(&input);
         let actual = interior_to_string(&actual);
 
         let expected = fs::read_to_string("./inputs/18/trench-1.txt")?;
@@ -244,15 +231,15 @@ mod tests {
 
     #[test]
     fn dig_interior_should_work_with_a_3_by_3() {
-        let trench: Trench = HashMap::from([
-            ((0, 0), "".to_string()),
-            ((1, 0), "".to_string()),
-            ((2, 0), "".to_string()),
-            ((0, 1), "".to_string()),
-            ((2, 1), "".to_string()),
-            ((0, 2), "".to_string()),
-            ((1, 2), "".to_string()),
-            ((2, 2), "".to_string()),
+        let trench: Trench = HashSet::from([
+            (0, 0),
+            (1, 0),
+            (2, 0),
+            (0, 1),
+            (2, 1),
+            (0, 2),
+            (1, 2),
+            (2, 2),
         ]);
 
         let interior = dig_interior(&trench);
