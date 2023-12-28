@@ -233,7 +233,7 @@ fn fast_area(outline: Outline) -> Area {
 
     let seconds = &outline[1..];
 
-    let doubleArea = outline
+    let double_area = outline
         .iter()
         .zip(seconds)
         .map(|((x1, y1), (x2, y2))| -> Area {
@@ -246,7 +246,7 @@ fn fast_area(outline: Outline) -> Area {
         })
         .sum::<Area>();
 
-    (doubleArea / 2).abs()
+    (double_area / 2).abs()
 }
 
 fn second() -> Result<(), Box<dyn Error>> {
