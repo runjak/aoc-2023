@@ -126,6 +126,27 @@ fn dig_interior(trench: &Trench) -> Interior {
     interior
 }
 
+fn interior_to_string(interior: &Interior) -> String {
+    let max_x = *interior.iter().map(|(x, _)| x).max().unwrap_or(&0);
+    let max_y = *interior.iter().map(|(_, y)| y).max().unwrap_or(&0);
+
+    let lines = (0..=max_y)
+        .map(|y| -> String {
+            (0..=max_x)
+                .map(|x| -> char {
+                    if interior.contains(&(x, y)) {
+                        '#'
+                    } else {
+                        '.'
+                    }
+                })
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>();
+
+    lines.join("\n")
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/18/example-1.txt", "./inputs/18/input.txt"];
 
@@ -165,6 +186,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::{collections::HashSet, error::Error, fs};
 
+    use crate::task_18::{interior_to_string, Interior};
+
     use super::{dig_interior, dig_trench, parse_input, Position};
 
     #[test]
@@ -176,24 +199,9 @@ mod tests {
             .keys()
             .map(|p| *p)
             .collect::<HashSet<_>>();
+        let actual = interior_to_string(&actual);
 
         let expected = fs::read_to_string("./inputs/18/trench-1.txt")?;
-        let expected = expected
-            .lines()
-            .enumerate()
-            .flat_map(|(y, line)| -> Vec<Position> {
-                line.chars()
-                    .enumerate()
-                    .filter_map(|(x, c)| -> Option<Position> {
-                        if c != '#' {
-                            return None;
-                        }
-
-                        Some((i32::try_from(x).unwrap(), i32::try_from(y).unwrap()))
-                    })
-                    .collect()
-            })
-            .collect::<HashSet<_>>();
 
         assert_eq!(actual, expected);
 
@@ -227,6 +235,23 @@ mod tests {
             .collect::<HashSet<_>>();
 
         assert_eq!(trench, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn stringify_interior() -> Result<(), Box<dyn Error>> {
+        let input = fs::read_to_string("./inputs/18/example-1.txt")?;
+        let input = parse_input(input);
+
+        let trench = dig_trench(&input);
+
+        let interior = interior_to_string(&trench.keys().map(|p| *p).collect::<HashSet<_>>());
+        println!("{}\n", interior);
+
+        let trench = dig_interior(&trench);
+        let interior = interior_to_string(&trench);
+        println!("{}\n", interior);
 
         Ok(())
     }
