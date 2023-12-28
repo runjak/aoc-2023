@@ -95,7 +95,9 @@ fn dig_interior(trench: &Trench) -> Interior {
     let outside_x = *trench.keys().map(|(x, _)| x).max().unwrap_or(&0) + 1;
     let outside_y = *trench.keys().map(|(_, y)| y).max().unwrap_or(&0) + 1;
 
-    let mut interior: Interior = (-1..=outside_x + 1).zip(-1..=outside_y).collect();
+    let mut interior: Interior = (-1..=outside_x + 1)
+        .flat_map(|x| -> Vec<Position> { (-1..=outside_y).map(|y| (x, y)).collect() })
+        .collect();
 
     for trench_position in trench.keys() {
         interior.remove(trench_position);
@@ -161,8 +163,6 @@ fn first() -> Result<(), Box<dyn Error>> {
         let capacity = trench.len();
 
         println!("Capacity: {}", capacity);
-
-        break;
     }
 
     Ok(())
@@ -185,9 +185,13 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashSet, error::Error, fs};
+    use std::{
+        collections::{HashMap, HashSet},
+        error::Error,
+        fs,
+    };
 
-    use super::{dig_interior, dig_trench, interior_to_string, parse_input, Position};
+    use super::{dig_interior, dig_trench, interior_to_string, parse_input, Position, Trench};
 
     #[test]
     fn dig_trench_from_example_should_match_trench1() -> Result<(), Box<dyn Error>> {
@@ -239,19 +243,23 @@ mod tests {
     }
 
     #[test]
-    fn stringify_interior() -> Result<(), Box<dyn Error>> {
-        let input = fs::read_to_string("./inputs/18/example-1.txt")?;
-        let input = parse_input(input);
+    fn dig_interior_should_work_with_a_3_by_3() {
+        let trench: Trench = HashMap::from([
+            ((0, 0), "".to_string()),
+            ((1, 0), "".to_string()),
+            ((2, 0), "".to_string()),
+            ((0, 1), "".to_string()),
+            ((2, 1), "".to_string()),
+            ((0, 2), "".to_string()),
+            ((1, 2), "".to_string()),
+            ((2, 2), "".to_string()),
+        ]);
 
-        let trench = dig_trench(&input);
+        let interior = dig_interior(&trench);
+        let interior = interior_to_string(&interior);
 
-        let interior = interior_to_string(&trench.keys().map(|p| *p).collect::<HashSet<_>>());
-        println!("{}\n", interior);
+        let expected = "###\n###\n###";
 
-        let trench = dig_interior(&trench);
-        let interior = interior_to_string(&trench);
-        println!("{}\n", interior);
-
-        Ok(())
+        assert_eq!(interior, expected);
     }
 }
