@@ -194,8 +194,50 @@ fn interpret_colors(input: &Vec<Dig>) -> Vec<Dig> {
         .collect()
 }
 
+fn apply_dig((x, y): &Position, dig: &Dig) -> Position {
+    let length = dig.length;
+
+    match dig.direction {
+        Direction::Up => (*x, y - length),
+        Direction::Down => (*x, y + length),
+        Direction::Left => (x - length, *y),
+        Direction::Right => (x + length, *y),
+    }
+}
+
+type Outline = Vec<Position>;
+
+fn fast_dig(input: &Vec<Dig>) -> Outline {
+    let mut current_position: Position = (0, 0);
+    let mut trench: Outline = Vec::from([current_position]);
+
+    for dig in input {
+        current_position = apply_dig(&current_position, dig);
+        trench.push(current_position);
+    }
+
+    trench
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = ["./inputs/18/example-1.txt", "./inputs/18/input.txt"];
+
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let input = parse_input(input);
+        let input = interpret_colors(&input);
+
+        let trench = fast_dig(&input);
+
+        println!("Trench:\n{:?}", trench);
+        // let trench = dig_interior(&trench);
+
+        // let capacity = trench.len();
+
+        // println!("Capacity: {}", capacity);
+
+        break;
+    }
 
     Ok(())
 }
