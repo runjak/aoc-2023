@@ -219,6 +219,36 @@ fn fast_dig(input: &Vec<Dig>) -> Outline {
     trench
 }
 
+type Area = i128;
+
+fn fast_area(outline: Outline) -> Area {
+    /*
+    We attempt following [1] here.
+    We also assume that the first position also equals the last one.
+    A more robust source seems to be [2].
+
+    [1]: https://www.wikihow.com/Calculate-the-Area-of-a-Polygon
+    [2]: https://en.m.wikipedia.org/wiki/Shoelace_formula
+    */
+
+    let seconds = &outline[1..];
+
+    let doubleArea = outline
+        .iter()
+        .zip(seconds)
+        .map(|((x1, y1), (x2, y2))| -> Area {
+            let x1 = Area::from(*x1);
+            let y1 = Area::from(*y1);
+            let x2 = Area::from(*x2);
+            let y2 = Area::from(*y2);
+
+            x1 * y2 - y1 * x2
+        })
+        .sum::<Area>();
+
+    (doubleArea / 2).abs()
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/18/example-1.txt", "./inputs/18/input.txt"];
 
@@ -227,14 +257,10 @@ fn second() -> Result<(), Box<dyn Error>> {
         let input = parse_input(input);
         let input = interpret_colors(&input);
 
-        let trench = fast_dig(&input);
+        let outline = fast_dig(&input);
+        let area = fast_area(outline);
 
-        println!("Trench:\n{:?}", trench);
-        // let trench = dig_interior(&trench);
-
-        // let capacity = trench.len();
-
-        // println!("Capacity: {}", capacity);
+        println!("Area: {}", area);
 
         break;
     }
@@ -257,7 +283,10 @@ mod tests {
 
     use crate::task_18::interpret_colors;
 
-    use super::{dig_interior, dig_trench, interior_to_string, parse_input, Position, Trench};
+    use super::{
+        dig_interior, dig_trench, fast_area, interior_to_string, parse_input, Area, Outline,
+        Position, Trench,
+    };
 
     #[test]
     fn dig_trench_from_example_should_match_trench1() -> Result<(), Box<dyn Error>> {
@@ -337,5 +366,15 @@ mod tests {
         assert_eq!(actual, expected);
 
         Ok(())
+    }
+
+    #[test]
+    fn fast_area_should_behave_as_explained_in_wikihow() {
+        let input: Outline = Vec::from([(-3, -2), (-1, 4), (6, 1), (3, 10), (-4, 9), (-3, -2)]);
+        let expected: Area = 60;
+
+        let actual = fast_area(input);
+
+        assert_eq!(actual, expected);
     }
 }
