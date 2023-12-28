@@ -52,7 +52,7 @@ fn parse_input(input: String) -> Vec<Dig> {
 }
 
 type Position = (i32, i32);
-type Field = HashMap<Position, Color>;
+type Trench = HashMap<Position, Color>;
 
 fn apply_direction((x, y): &Position, direction: &Direction) -> Position {
     match direction {
@@ -63,9 +63,9 @@ fn apply_direction((x, y): &Position, direction: &Direction) -> Position {
     }
 }
 
-fn dig_input(input: &Vec<Dig>) -> Field {
+fn dig_trench(input: &Vec<Dig>) -> Trench {
     let mut current_position: Position = (0, 0);
-    let mut lagoon: Field = HashMap::from([(current_position, "".to_string())]);
+    let mut lagoon: Trench = HashMap::from([(current_position, "".to_string())]);
 
     for dig in input {
         for _ in 0..dig.length {
@@ -77,33 +77,53 @@ fn dig_input(input: &Vec<Dig>) -> Field {
     lagoon
 }
 
-fn dig_interior(field: &Field) -> Field {
-    let max_x = *field.keys().map(|(x, _)| x).max().unwrap_or(&0);
-    let max_y = *field.keys().map(|(_, y)| y).max().unwrap_or(&0);
+fn shift_positive(trench: &Trench) -> Trench {
+    let min_x = trench.keys().map(|(x, _)| x).min().unwrap_or(&0);
+    let min_y = trench.keys().map(|(_, y)| y).min().unwrap_or(&0);
 
-    let mut field = field.clone();
+    trench
+        .iter()
+        .map(|((x, y), c)| -> (Position, Color) { ((x - min_x, y - min_y), c.to_string()) })
+        .collect()
+}
 
-    for y in 0..=max_y {
-        let mut inside = false;
+type Interior = HashSet<Position>;
 
-        for x in 0..=max_x {
-            let current_position = (x, y);
-            let previous_position = (x - 1, y);
+fn dig_interior(trench: &Trench) -> Interior {
+    let trench = shift_positive(trench);
 
-            if inside {
-                if field.contains_key(&previous_position) && !field.contains_key(&current_position)
-                {
-                    field.insert(current_position, "".to_string());
-                } else {
-                }
-            } else {
+    let outside_x = *trench.keys().map(|(x, _)| x).max().unwrap_or(&0) + 1;
+    let outside_y = *trench.keys().map(|(_, y)| y).max().unwrap_or(&0) + 1;
+
+    let mut interior: Interior = (-1..=outside_x + 1).zip(-1..=outside_y).collect();
+
+    for trench_position in trench.keys() {
+        interior.remove(trench_position);
+    }
+
+    let mut to_remove: Vec<Position> = Vec::from([(-1, -1)]);
+
+    while let Some(position) = to_remove.pop() {
+        interior.remove(&position);
+
+        for d in [
+            Direction::Up,
+            Direction::Down,
+            Direction::Left,
+            Direction::Right,
+        ] {
+            let next_position = apply_direction(&position, &d);
+            if interior.contains(&next_position) {
+                to_remove.push(next_position);
             }
-
-            let has_current = field.get(&current_position);
         }
     }
 
-    todo!("Rest of the owl")
+    for trench_position in trench.keys() {
+        interior.insert(*trench_position);
+    }
+
+    interior
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
@@ -113,7 +133,12 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let input = parse_input(input);
 
-        println!("Got input:\n{:?}", input);
+        let trench = dig_trench(&input);
+        let trench = dig_interior(&trench);
+
+        let capacity = trench.len();
+
+        println!("Capacity: {}", capacity);
 
         break;
     }
@@ -140,14 +165,17 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::{collections::HashSet, error::Error, fs};
 
-    use super::{dig_input, parse_input, Position};
+    use super::{dig_interior, dig_trench, parse_input, Position};
 
     #[test]
-    fn initial_dig_from_input_should_match_example() -> Result<(), Box<dyn Error>> {
+    fn dig_trench_from_example_should_match_trench1() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string("./inputs/18/example-1.txt")?;
         let input = parse_input(input);
 
-        let actual = dig_input(&input).keys().map(|p| *p).collect::<HashSet<_>>();
+        let actual = dig_trench(&input)
+            .keys()
+            .map(|p| *p)
+            .collect::<HashSet<_>>();
 
         let expected = fs::read_to_string("./inputs/18/trench-1.txt")?;
         let expected = expected
@@ -168,6 +196,37 @@ mod tests {
             .collect::<HashSet<_>>();
 
         assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn dig_interior_from_example_should_match_trench2() -> Result<(), Box<dyn Error>> {
+        let input = fs::read_to_string("./inputs/18/example-1.txt")?;
+        let input = parse_input(input);
+
+        let trench = dig_trench(&input);
+        let trench = dig_interior(&trench);
+
+        let expected = fs::read_to_string("./inputs/18/trench-2.txt")?;
+        let expected = expected
+            .lines()
+            .enumerate()
+            .flat_map(|(y, line)| -> Vec<Position> {
+                line.chars()
+                    .enumerate()
+                    .filter_map(|(x, c)| -> Option<Position> {
+                        if c != '#' {
+                            return None;
+                        }
+
+                        Some((i32::try_from(x).unwrap(), i32::try_from(y).unwrap()))
+                    })
+                    .collect()
+            })
+            .collect::<HashSet<_>>();
+
+        assert_eq!(trench, expected);
 
         Ok(())
     }
