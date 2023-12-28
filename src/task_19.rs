@@ -164,12 +164,7 @@ fn apply_workflow(workflow: &Workflow, part: &Part) -> WorkflowResult {
     WorkflowResult::Reject
 }
 
-struct SortedParts {
-    accepted: Vec<Part>,
-    rejected: Vec<Part>,
-}
-
-fn sort_parts(input: &Input) -> SortedParts {
+fn filter_accepted(input: &Input) -> Vec<Part> {
     let catalog: HashMap<String, &Workflow> = input
         .workflows
         .iter()
@@ -177,7 +172,6 @@ fn sort_parts(input: &Input) -> SortedParts {
         .collect();
 
     let mut accepted: Vec<Part> = Vec::new();
-    let mut rejected: Vec<Part> = Vec::new();
 
     for part in input.parts.iter() {
         let mut current_result: WorkflowResult = WorkflowResult::SeeOther("in".to_string());
@@ -194,19 +188,15 @@ fn sort_parts(input: &Input) -> SortedParts {
             WorkflowResult::Accept => {
                 accepted.push(*part);
             }
-            WorkflowResult::Reject => {
-                rejected.push(*part);
-            }
-            WorkflowResult::SeeOther(_) => {}
+            _ => {}
         }
     }
 
-    SortedParts { accepted, rejected }
+    accepted
 }
 
-fn score_sorted_parts(sorted_parts: &SortedParts) -> i32 {
-    sorted_parts
-        .accepted
+fn score_sorted_parts(accepted_parts: &Vec<Part>) -> i32 {
+    accepted_parts
         .iter()
         .map(|p| -> i32 { p.x + p.m + p.a + p.s })
         .sum::<i32>()
@@ -219,7 +209,7 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let input = parse_input(input);
 
-        let sorted_parts = sort_parts(&input);
+        let sorted_parts = filter_accepted(&input);
         let score = score_sorted_parts(&sorted_parts);
 
         println!("Score is: {}", score);
