@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::{error::Error, fs};
+use std::{collections::HashMap, error::Error, fs};
 
 #[derive(Debug)]
 enum Attribute {
@@ -26,7 +26,7 @@ struct Workflow {
     rules: Vec<Rule>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Part {
     x: i32,
     m: i32,
@@ -95,7 +95,7 @@ fn parse_part(input: &str) -> Option<Part> {
     let a = captures.name("a")?.as_str().parse::<i32>().ok()?;
     let s = captures.name("s")?.as_str().parse::<i32>().ok()?;
 
-    Some(Part{ x, m, a, s })
+    Some(Part { x, m, a, s })
 }
 
 fn parse_input(input: String) -> Input {
@@ -114,6 +114,104 @@ fn parse_input(input: String) -> Input {
     Input { workflows, parts }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+enum WorkflowResult {
+    SeeOther(String),
+    Accept,
+    Reject,
+}
+
+fn workflow_result_from_string(label: &String) -> WorkflowResult {
+    if label.as_str() == "A" {
+        return WorkflowResult::Accept;
+    } else if label.as_str() == "R" {
+        return WorkflowResult::Reject;
+    } else {
+        return WorkflowResult::SeeOther(label.to_string());
+    }
+}
+
+fn apply_workflow(workflow: &Workflow, part: &Part) -> WorkflowResult {
+    for rule in workflow.rules.iter() {
+        match rule {
+            Rule::Conditional {
+                attribute,
+                comparison,
+                value,
+                name,
+            } => {
+                let part_value = match attribute {
+                    Attribute::X => part.x,
+                    Attribute::M => part.m,
+                    Attribute::A => part.a,
+                    Attribute::S => part.s,
+                };
+
+                if comparison == &'>' && part_value > *value {
+                    return workflow_result_from_string(name);
+                }
+
+                if comparison == &'<' && part_value < *value {
+                    return workflow_result_from_string(name);
+                }
+            }
+            Rule::Default(label) => {
+                return workflow_result_from_string(label);
+            }
+        }
+    }
+
+    WorkflowResult::Reject
+}
+
+struct SortedParts {
+    accepted: Vec<Part>,
+    rejected: Vec<Part>,
+}
+
+fn sort_parts(input: &Input) -> SortedParts {
+    let catalog: HashMap<String, &Workflow> = input
+        .workflows
+        .iter()
+        .map(|workflow| -> (String, &Workflow) { (workflow.name.to_string(), workflow) })
+        .collect();
+
+    let mut accepted: Vec<Part> = Vec::new();
+    let mut rejected: Vec<Part> = Vec::new();
+
+    for part in input.parts.iter() {
+        let mut current_result: WorkflowResult = WorkflowResult::SeeOther("in".to_string());
+
+        while let WorkflowResult::SeeOther(ref name) = current_result {
+            let Some(current_workflow) = catalog.get(name) else {
+                break;
+            };
+
+            current_result = apply_workflow(*current_workflow, part);
+        }
+
+        match current_result {
+            WorkflowResult::Accept => {
+                accepted.push(*part);
+            }
+            WorkflowResult::Reject => {
+                rejected.push(*part);
+            }
+            WorkflowResult::SeeOther(_) => {}
+        }
+    }
+
+    SortedParts { accepted, rejected }
+}
+
+fn score_sorted_parts(sorted_parts: &SortedParts) -> i32 {
+    sorted_parts
+        .accepted
+        .iter()
+        .map(|p| -> i32 { p.x + p.m + p.a + p.s })
+        .sum::<i32>()
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = ["./inputs/19/example-1.txt", "./inputs/19/input.txt"];
 
@@ -121,9 +219,10 @@ fn first() -> Result<(), Box<dyn Error>> {
         let input = fs::read_to_string(path)?;
         let input = parse_input(input);
 
-        println!("Got input:\n{:?}", input);
+        let sorted_parts = sort_parts(&input);
+        let score = score_sorted_parts(&sorted_parts);
 
-        break;
+        println!("Score is: {}", score);
     }
 
     Ok(())
