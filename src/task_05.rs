@@ -111,6 +111,7 @@ pub fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn map_seed_range(seed_range: (i64, i64), category_map: &CategoryMap) -> Vec<(i64, i64)> {
     let mappings = &mut category_map.mappings.clone();
     mappings.sort_by(|(_, source_a, _), (_, source_b, _)| source_a.cmp(source_b));

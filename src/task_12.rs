@@ -1,9 +1,4 @@
-use std::{
-    collections::HashSet,
-    error::Error,
-    fs,
-    io::{self, Write},
-};
+use std::{collections::HashSet, error::Error, fs};
 
 type N = u32;
 type Groups = Vec<N>;
@@ -192,6 +187,7 @@ fn known_working_and_broken(spring_data: &SpringData) -> (HashSet<N>, HashSet<N>
 /*
 Calculate the minimum length that groups can be squished together to accounting for 1 space between each group.
 */
+#[allow(dead_code)]
 fn minimum_squish(groups: &Groups) -> N {
     let broken_count = groups.iter().sum::<N>();
     let space_between_count = N::try_from(groups.len().max(1) - 1).unwrap_or(0);
@@ -202,11 +198,13 @@ fn minimum_squish(groups: &Groups) -> N {
 /*
 Produce a Vec of possible prefixes for the springs.
 */
+#[allow(dead_code, unused)]
 fn group_prefixes(springs: &String, group: N) -> Vec<String> {
     let Some(start_index) = springs.find(|c| c != '.') else {
         return Vec::new();
     };
 
+    #[allow(unused)]
     let (common_prefix, tail) = springs.split_at(start_index);
 
     // if tail.len() < group {
@@ -218,7 +216,9 @@ fn group_prefixes(springs: &String, group: N) -> Vec<String> {
     todo!("to be implemented")
 }
 
+#[allow(dead_code)]
 fn faster_generate_arrangements(spring_data: &SpringData) -> Vec<String> {
+    #[allow(unused)]
     let (working, broken) = known_working_and_broken(spring_data);
 
     todo!("to be implemented")

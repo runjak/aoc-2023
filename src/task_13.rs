@@ -155,7 +155,7 @@ fn find_smudge_horizontal_symmetry(pattern: &Pattern) -> Option<N> {
 
     candidates
         .iter()
-        .filter(|(k, v)| **v == 1)
+        .filter(|(_, v)| **v == 1)
         .filter_map(|(k, _)| N::try_from(*k).ok())
         .next()
 }

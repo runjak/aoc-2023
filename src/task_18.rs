@@ -126,6 +126,7 @@ fn dig_interior(trench: &Trench) -> Interior {
     interior
 }
 
+#[allow(dead_code)]
 fn interior_to_string(interior: &Interior) -> String {
     let max_x = *interior.iter().map(|(x, _)| x).max().unwrap_or(&0);
     let max_y = *interior.iter().map(|(_, y)| y).max().unwrap_or(&0);
@@ -186,9 +187,7 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 mod tests {
     use std::{collections::HashSet, error::Error, fs};
 
-    use crate::task_18::{interior_to_string, Interior};
-
-    use super::{dig_interior, dig_trench, parse_input, Position};
+    use super::{dig_interior, dig_trench, interior_to_string, parse_input, Position};
 
     #[test]
     fn dig_trench_from_example_should_match_trench1() -> Result<(), Box<dyn Error>> {

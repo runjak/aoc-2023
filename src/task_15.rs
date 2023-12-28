@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, LinkedList},
-    error::Error,
-    fs,
-};
+use std::{collections::HashMap, error::Error, fs};
 
 fn hash(input: &str) -> u8 {
     let mut current_value: u8 = 0;
