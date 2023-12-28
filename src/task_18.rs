@@ -1,6 +1,6 @@
 use std::{collections::HashSet, error::Error, fs};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Direction {
     Up,
     Down,
@@ -10,7 +10,7 @@ enum Direction {
 
 type Color = String;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Dig {
     direction: Direction,
     length: i32,
@@ -162,6 +162,38 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn interpret_colors(input: &Vec<Dig>) -> Vec<Dig> {
+    input
+        .iter()
+        .filter_map(|dig| -> Option<Dig> {
+            if !dig.color.starts_with("#") {
+                return None;
+            }
+
+            let color = &dig.color[1..];
+            if color.len() != 6 {
+                return None;
+            }
+
+            let length = i32::from_str_radix(&color[0..color.len() - 1], 16).ok()?;
+
+            let direction = match color.chars().last().unwrap_or('.') {
+                '0' => Some(Direction::Right),
+                '1' => Some(Direction::Down),
+                '2' => Some(Direction::Left),
+                '3' => Some(Direction::Up),
+                _ => None,
+            }?;
+
+            Some(Dig {
+                direction,
+                length,
+                color: dig.color.to_string(),
+            })
+        })
+        .collect()
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
     println!("To be implemented");
 
@@ -180,6 +212,8 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
     use std::{collections::HashSet, error::Error, fs};
+
+    use crate::task_18::interpret_colors;
 
     use super::{dig_interior, dig_trench, interior_to_string, parse_input, Position, Trench};
 
@@ -248,5 +282,18 @@ mod tests {
         let expected = "###\n###\n###";
 
         assert_eq!(interior, expected);
+    }
+
+    #[test]
+    fn interpret_colors_should_behave_as_in_example() -> Result<(), Box<dyn Error>> {
+        let expected = fs::read_to_string("inputs/18/interpreted-1.txt")?;
+        let expected = parse_input(expected);
+
+        let actual = fs::read_to_string("./inputs/18/example-1.txt")?;
+        let actual = interpret_colors(&parse_input(actual));
+
+        assert_eq!(actual, expected);
+
+        Ok(())
     }
 }
