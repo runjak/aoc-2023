@@ -327,7 +327,13 @@ fn apply_range_workflow(
     results
 }
 
-fn second() -> Result<(), Box<dyn Error>> {
+fn filter_accepted_ranges(input: &Input) -> Vec<PartRange> {
+    let catalog: HashMap<String, &Workflow> = input
+        .workflows
+        .iter()
+        .map(|workflow| -> (String, &Workflow) { (workflow.name.to_string(), workflow) })
+        .collect();
+
     let default_part_range = PartRange {
         x: (1, 4000),
         m: (1, 4000),
@@ -335,7 +341,59 @@ fn second() -> Result<(), Box<dyn Error>> {
         s: (1, 4000),
     };
 
-    println!("To be implemented.");
+    let mut leads: Vec<(WorkflowResult, PartRange)> = Vec::from([(
+        WorkflowResult::SeeOther("in".to_string()),
+        default_part_range,
+    )]);
+
+    let mut accepted_part_ranges: Vec<PartRange> = Vec::new();
+
+    while let Some(lead) = leads.pop() {
+        match lead.0 {
+            WorkflowResult::SeeOther(workflow_name) => {
+                let Some(workflow) = catalog.get(&workflow_name) else {
+                    continue;
+                };
+
+                leads.append(&mut apply_range_workflow(*workflow, &lead.1));
+            }
+            WorkflowResult::Accept => accepted_part_ranges.push(lead.1),
+            WorkflowResult::Reject => (),
+        }
+    }
+
+    accepted_part_ranges
+}
+
+type Combinations = i128;
+
+fn score_part_ranges(part_ranges: &Vec<PartRange>) -> Combinations {
+    part_ranges
+        .iter()
+        .map(|part_range| -> Combinations {
+            let ranges = [part_range.x, part_range.m, part_range.a, part_range.s].to_vec();
+
+            ranges
+                .iter()
+                .map(|(from, to)| -> Combinations { Combinations::from(to - from + 1) })
+                .product()
+        })
+        .sum::<Combinations>()
+}
+
+fn second() -> Result<(), Box<dyn Error>> {
+    let paths = ["./inputs/19/example-1.txt", "./inputs/19/input.txt"];
+
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let input = parse_input(input);
+
+        let accepted_ranges = filter_accepted_ranges(&input);
+        let score = score_part_ranges(&accepted_ranges);
+
+        println!("Score is: {}", score);
+    }
+
     Ok(())
 }
 
