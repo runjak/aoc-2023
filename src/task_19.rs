@@ -218,7 +218,123 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+type Range = (i32, i32);
+
+#[derive(Debug, Clone, Copy)]
+struct PartRange {
+    x: Range,
+    m: Range,
+    a: Range,
+    s: Range,
+}
+
+fn get_range_attribute(part_range: &PartRange, attribute: &Attribute) -> Range {
+    match attribute {
+        Attribute::X => part_range.x,
+        Attribute::M => part_range.m,
+        Attribute::A => part_range.a,
+        Attribute::S => part_range.s,
+    }
+}
+
+fn set_range_attribute(part_range: &PartRange, attribute: &Attribute, range: &Range) -> PartRange {
+    let mut part_range = *part_range;
+
+    match attribute {
+        Attribute::X => part_range.x = *range,
+        Attribute::M => part_range.m = *range,
+        Attribute::A => part_range.a = *range,
+        Attribute::S => part_range.s = *range,
+    }
+
+    part_range
+}
+
+fn ranges_from_comparison(
+    range: &Range,
+    value: i32,
+    comparison: &char,
+) -> (Option<Range>, Option<Range>) {
+    /*
+    Return value:
+    First range: the one that is accepted for the value and comparison.
+    Second range: the one that is rejected for the value and comparison.
+    */
+    if comparison == &'>' {
+        if range.0 > value {
+            // Whole range bigger than value
+            return (Some(*range), None);
+        } else if value > range.1 {
+            // Value bigger than whole range
+            return (None, Some(*range));
+        } else {
+            // Value somewhere in range
+            return (Some((value + 1, range.1)), Some((range.0, value)));
+        }
+    } else {
+        // Assume comparison of '<'
+        if range.1 < value {
+            // Whole range smaller than value
+            return (Some(*range), None);
+        } else if value < range.0 {
+            // Value smaller than whole range
+            return (None, Some(*range));
+        } else {
+            // Value somewhere in range
+            return (Some((range.0, value - 1)), Some((value, range.1)));
+        }
+    }
+}
+
+fn apply_range_workflow(
+    workflow: &Workflow,
+    current_range: &PartRange,
+) -> Vec<(WorkflowResult, PartRange)> {
+    let mut current_range = *current_range;
+
+    let mut results: Vec<(WorkflowResult, PartRange)> = Vec::new();
+
+    for rule in workflow.rules.iter() {
+        match rule {
+            Rule::Conditional {
+                attribute,
+                comparison,
+                value,
+                name,
+            } => {
+                let range = get_range_attribute(&current_range, attribute);
+                let (accepted, rejected) = ranges_from_comparison(&range, *value, comparison);
+
+                if let Some(accepted) = accepted {
+                    results.push((
+                        workflow_result_from_string(name),
+                        set_range_attribute(&current_range, attribute, &accepted),
+                    ));
+                }
+
+                let Some(rejected) = rejected else {
+                    break;
+                };
+                current_range = set_range_attribute(&current_range, attribute, &rejected);
+            }
+            Rule::Default(label) => {
+                results.push((workflow_result_from_string(label), current_range));
+                break;
+            }
+        }
+    }
+
+    results
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
+    let default_part_range = PartRange {
+        x: (1, 4000),
+        m: (1, 4000),
+        a: (1, 4000),
+        s: (1, 4000),
+    };
+
     println!("To be implemented.");
     Ok(())
 }
