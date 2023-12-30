@@ -1,4 +1,8 @@
-use std::{collections::HashMap, error::Error, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fs,
+};
 
 #[derive(Debug, Clone, Copy)]
 enum SignalType {
@@ -31,45 +35,163 @@ enum Module {
     },
 }
 
-fn parse_input(input: String) -> Vec<Module> {
-    input
-        .lines()
-        .filter_map(|line| -> Option<Module> {
-            let (name, outputs) = line.split_once(" -> ")?;
-            let outputs = outputs
-                .split(", ")
-                .map(|output| output.to_string())
-                .collect::<Vec<_>>();
+impl Module {
+    /// Returns `true` if the module is [`Broadcaster`].
+    ///
+    /// [`Broadcaster`]: Module::Broadcaster
+    #[must_use]
+    fn is_broadcaster(&self) -> bool {
+        matches!(self, Self::Broadcaster { .. })
+    }
 
-            if name == "broadcaster" {
-                return Some(Module::Broadcaster {
-                    name: name.to_string(),
-                    outputs,
-                });
-            }
+    /// Returns `true` if the module is [`FlipFlop`].
+    ///
+    /// [`FlipFlop`]: Module::FlipFlop
+    #[must_use]
+    fn is_flip_flop(&self) -> bool {
+        matches!(self, Self::FlipFlop { .. })
+    }
 
-            let prefix = &name[0..1];
-            let name = name[1..].to_string();
+    /// Returns `true` if the module is [`Conjunction`].
+    ///
+    /// [`Conjunction`]: Module::Conjunction
+    #[must_use]
+    fn is_conjunction(&self) -> bool {
+        matches!(self, Self::Conjunction { .. })
+    }
 
-            if prefix == "%" {
-                return Some(Module::FlipFlop {
-                    name,
-                    is_on: false,
-                    outputs,
-                });
-            }
+    #[must_use]
+    fn get_name(&self) -> &String {
+        match self {
+            Module::Broadcaster { name, outputs: _ } => name,
+            Module::FlipFlop {
+                name,
+                is_on: _,
+                outputs: _,
+            } => name,
+            Module::Conjunction {
+                name,
+                inputs: _,
+                outputs: _,
+            } => name,
+        }
+    }
 
-            if prefix == "&" {
-                return Some(Module::Conjunction {
-                    name,
-                    inputs: HashMap::new(),
-                    outputs,
-                });
+    #[must_use]
+    fn get_outputs(&self) -> &Vec<String> {
+        match self {
+            Module::Broadcaster { name, outputs } => outputs,
+            Module::FlipFlop {
+                name,
+                is_on,
+                outputs,
+            } => outputs,
+            Module::Conjunction {
+                name,
+                inputs,
+                outputs,
+            } => outputs,
+        }
+    }
+}
+
+type ModuleCatalog = HashMap<String, Module>;
+
+fn parse_input(input: String) -> ModuleCatalog {
+    let modules = input.lines().filter_map(|line| -> Option<Module> {
+        let (name, outputs) = line.split_once(" -> ")?;
+        let outputs = outputs
+            .split(", ")
+            .map(|output| output.to_string())
+            .collect::<Vec<_>>();
+
+        if name == "broadcaster" {
+            return Some(Module::Broadcaster {
+                name: name.to_string(),
+                outputs,
+            });
+        }
+
+        let prefix = &name[0..1];
+        let name = name[1..].to_string();
+
+        if prefix == "%" {
+            return Some(Module::FlipFlop {
+                name,
+                is_on: false,
+                outputs,
+            });
+        }
+
+        if prefix == "&" {
+            return Some(Module::Conjunction {
+                name,
+                inputs: HashMap::new(),
+                outputs,
+            });
+        }
+
+        None
+    });
+
+    let mut catalog: ModuleCatalog = modules
+        .map(|module| (module.get_name().to_string(), module))
+        .collect();
+
+    let conjunction_names = catalog
+        .values()
+        .filter_map(|module| -> Option<String> {
+            if module.is_conjunction() {
+                return Some(module.get_name().to_string());
             }
 
             None
         })
-        .collect()
+        .collect::<HashSet<_>>();
+
+    let mut inputs_by_name: HashMap<String, Vec<String>> = HashMap::new();
+
+    for module in catalog.values() {
+        let targets = module
+            .get_outputs()
+            .iter()
+            .filter(|output| conjunction_names.contains(*output));
+
+        for target in targets {
+            match inputs_by_name.get_mut(target) {
+                Some(existing) => {
+                    existing.push(module.get_name().to_string());
+                }
+                None => {
+                    inputs_by_name.insert(
+                        target.to_string(),
+                        Vec::from([module.get_name().to_string()]),
+                    );
+                }
+            }
+        }
+    }
+
+    for conjunction_name in conjunction_names.iter() {
+        let inputs = inputs_by_name.get(conjunction_name);
+        let conjunction = catalog.get_mut(conjunction_name);
+        if let (Some(conjunction), Some(inputs_to_add)) = (conjunction, inputs) {
+            match conjunction {
+                Module::Conjunction {
+                    name,
+                    inputs,
+                    outputs,
+                } => {
+                    for input in inputs_to_add.iter() {
+                        inputs.insert(input.to_string(), SignalType::Low);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    catalog
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
