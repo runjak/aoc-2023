@@ -27,6 +27,21 @@ struct Signal {
     to: String,
 }
 
+impl Signal {
+    #[must_use]
+    fn to_string(&self) -> String {
+        let signal_label = if self.signal_type.is_high() {
+            "-high->".to_string()
+        } else {
+            "-low->".to_string()
+        };
+
+        let parts = [self.from.to_string(), signal_label, self.to.to_string()];
+
+        parts.join(" ")
+    }
+}
+
 #[derive(Debug)]
 enum Module {
     Broadcaster {
