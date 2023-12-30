@@ -10,6 +10,16 @@ enum SignalType {
     High,
 }
 
+impl SignalType {
+    /// Returns `true` if the signal type is [`High`].
+    ///
+    /// [`High`]: SignalType::High
+    #[must_use]
+    fn is_high(&self) -> bool {
+        matches!(self, Self::High)
+    }
+}
+
 #[derive(Debug)]
 struct Signal {
     from: String,
@@ -192,6 +202,80 @@ fn parse_input(input: String) -> ModuleCatalog {
     }
 
     catalog
+}
+
+fn signal_at_module(signal: &Signal, module: &mut Module) -> Vec<Signal> {
+    if &signal.to != module.get_name() {
+        return Vec::new();
+    }
+
+    match module {
+        Module::Broadcaster { name, outputs } => {
+            return outputs
+                .iter()
+                .map(|output| -> Signal {
+                    Signal {
+                        from: name.to_string(),
+                        signal_type: signal.signal_type,
+                        to: output.to_string(),
+                    }
+                })
+                .collect();
+        }
+        Module::FlipFlop {
+            name,
+            mut is_on,
+            outputs,
+        } => {
+            if signal.signal_type.is_high() {
+                return Vec::new();
+            }
+
+            is_on = !is_on;
+
+            let signal_type = if is_on {
+                SignalType::High
+            } else {
+                SignalType::Low
+            };
+
+            return outputs
+                .iter()
+                .map(|output| -> Signal {
+                    Signal {
+                        from: name.to_string(),
+                        signal_type,
+                        to: output.to_string(),
+                    }
+                })
+                .collect();
+        }
+        Module::Conjunction {
+            name,
+            ref mut inputs,
+            outputs,
+        } => {
+            inputs.insert(signal.from.to_string(), signal.signal_type);
+
+            let all_high = inputs.values().all(|input| input.is_high());
+            let signal_type = if all_high {
+                SignalType::Low
+            } else {
+                SignalType::High
+            };
+
+            return outputs
+                .iter()
+                .map(|output| -> Signal {
+                    Signal {
+                        from: name.to_string(),
+                        signal_type,
+                        to: output.to_string(),
+                    }
+                })
+                .collect();
+        }
+    }
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
