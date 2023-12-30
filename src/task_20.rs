@@ -80,15 +80,15 @@ impl Module {
     #[must_use]
     fn get_outputs(&self) -> &Vec<String> {
         match self {
-            Module::Broadcaster { name, outputs } => outputs,
+            Module::Broadcaster { name: _, outputs } => outputs,
             Module::FlipFlop {
-                name,
-                is_on,
+                name: _,
+                is_on: _,
                 outputs,
             } => outputs,
             Module::Conjunction {
-                name,
-                inputs,
+                name: _,
+                inputs: _,
                 outputs,
             } => outputs,
         }
@@ -178,9 +178,9 @@ fn parse_input(input: String) -> ModuleCatalog {
         if let (Some(conjunction), Some(inputs_to_add)) = (conjunction, inputs) {
             match conjunction {
                 Module::Conjunction {
-                    name,
+                    name: _,
                     inputs,
-                    outputs,
+                    outputs: _,
                 } => {
                     for input in inputs_to_add.iter() {
                         inputs.insert(input.to_string(), SignalType::Low);
