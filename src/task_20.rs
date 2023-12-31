@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     error::Error,
     fs,
 };
@@ -293,6 +293,29 @@ fn signal_at_module(signal: &Signal, module: &mut Module) -> Vec<Signal> {
     }
 }
 
+fn trigger_button(modules: &mut ModuleCatalog) -> Vec<Signal> {
+    let mut seen_signals: Vec<Signal> = Vec::new();
+    let mut signals = VecDeque::from([Signal {
+        from: "button".to_string(),
+        signal_type: SignalType::Low,
+        to: "broadcaster".to_string(),
+    }]);
+
+    while let Some(signal) = signals.pop_front() {
+        let Some(module) = modules.get_mut(&signal.to) else {
+            continue;
+        };
+
+        for next_signal in signal_at_module(&signal, module).into_iter() {
+            signals.push_back(next_signal);
+        }
+
+        seen_signals.push(signal);
+    }
+
+    seen_signals
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = [
         "./inputs/20/example-1.txt",
@@ -302,9 +325,15 @@ fn first() -> Result<(), Box<dyn Error>> {
 
     for path in paths {
         let input = fs::read_to_string(path)?;
-        let input = parse_input(input);
+        let mut input = parse_input(input);
 
         println!("Parsed input:\n{:?}", input);
+
+        let seen_signals = trigger_button(&mut input);
+
+        for signal in seen_signals {
+            println!("{}", signal.to_string());
+        }
     }
 
     Ok(())
@@ -323,4 +352,30 @@ pub fn main() -> Result<(), Box<dyn Error>> {
     second()?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{error::Error, fs};
+
+    use super::{parse_input, trigger_button};
+
+    #[test]
+    fn example_1_should_behave_as_described() -> Result<(), Box<dyn Error>> {
+        let example = fs::read_to_string("./inputs/20/example-1.txt")?;
+        let mut example = parse_input(example);
+
+        let expected = fs::read_to_string("./inputs/20/expected-1.txt")?;
+
+        let actual = trigger_button(&mut example);
+        let actual = actual
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
 }
