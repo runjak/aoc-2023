@@ -61,22 +61,6 @@ enum Module {
 }
 
 impl Module {
-    /// Returns `true` if the module is [`Broadcaster`].
-    ///
-    /// [`Broadcaster`]: Module::Broadcaster
-    #[must_use]
-    fn is_broadcaster(&self) -> bool {
-        matches!(self, Self::Broadcaster { .. })
-    }
-
-    /// Returns `true` if the module is [`FlipFlop`].
-    ///
-    /// [`FlipFlop`]: Module::FlipFlop
-    #[must_use]
-    fn is_flip_flop(&self) -> bool {
-        matches!(self, Self::FlipFlop { .. })
-    }
-
     /// Returns `true` if the module is [`Conjunction`].
     ///
     /// [`Conjunction`]: Module::Conjunction
@@ -303,12 +287,10 @@ fn trigger_button(modules: &mut ModuleCatalog) -> Vec<Signal> {
     }]);
 
     while let Some(signal) = signals.pop_front() {
-        let Some(module) = modules.get_mut(&signal.to) else {
-            continue;
-        };
-
-        for next_signal in signal_at_module(&signal, module).into_iter() {
-            signals.push_back(next_signal);
+        if let Some(module) = modules.get_mut(&signal.to) {
+            for next_signal in signal_at_module(&signal, module).into_iter() {
+                signals.push_back(next_signal);
+            }
         }
 
         seen_signals.push(signal);
@@ -376,6 +358,47 @@ mod tests {
             .join("\n");
 
         assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn example_2_should_behave_as_described() -> Result<(), Box<dyn Error>> {
+        let example = fs::read_to_string("./inputs/20/example-2.txt")?;
+        let mut example = parse_input(example);
+
+        let expected = fs::read_to_string("inputs/20/expected-2-1.txt")?;
+
+        let actual = trigger_button(&mut example);
+        let actual = actual
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert_eq!(actual, expected, "Comparing example-2 with expected-2-1");
+
+        let expected = fs::read_to_string("inputs/20/expected-2-2.txt")?;
+
+        let actual = trigger_button(&mut example);
+        let actual = actual
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert_eq!(actual, expected, "Comparing example-2 with expected-2-2");
+
+        let expected = fs::read_to_string("inputs/20/expected-2-3.txt")?;
+
+        let actual = trigger_button(&mut example);
+        let actual = actual
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert_eq!(actual, expected, "Comparing example-2 with expected-2-3");
 
         Ok(())
     }
