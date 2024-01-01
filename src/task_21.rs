@@ -188,4 +188,47 @@ pub fn main() -> Result<(), Box<dyn Error>> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use std::{collections::HashSet, error::Error, fs};
+
+    use super::{parse_input_map, reachable_in_steps, Position, TileType};
+
+    #[test]
+    fn reachable_in_steps_should_behave_as_in_examples() -> Result<(), Box<dyn Error>> {
+        let expecteds_paths = [
+            "inputs/21/expected-1-1.txt",
+            "inputs/21/expected-1-2.txt",
+            "inputs/21/expected-1-3.txt",
+            "inputs/21/expected-1-4.txt",
+        ];
+
+        let mut steps_and_reachables: Vec<(usize, HashSet<Position>)> = Vec::new();
+
+        for (index, path) in expecteds_paths.iter().enumerate() {
+            let expected = fs::read_to_string(path)?;
+            let expected = parse_input_map(expected);
+            let expected = expected
+                .iter()
+                .filter(|(_, tile)| **tile == TileType::Reach)
+                .map(|(position, _)| *position)
+                .collect::<HashSet<_>>();
+
+            steps_and_reachables.push((index + 1, expected));
+        }
+
+        let input = fs::read_to_string("./inputs/21/example-1.txt")?;
+        let input = parse_input_map(input);
+
+        for (steps, expected) in steps_and_reachables {
+            let reachables = reachable_in_steps(&input, steps);
+
+            assert_eq!(
+                reachables, expected,
+                "Example should reach these after {} steps.",
+                steps
+            );
+        }
+
+        Ok(())
+    }
+}
