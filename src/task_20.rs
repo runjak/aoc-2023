@@ -4,7 +4,7 @@ use std::{
     fs,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum SignalType {
     Low,
     High,
@@ -42,7 +42,7 @@ impl Signal {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Module {
     Broadcaster {
         name: String,
@@ -50,7 +50,7 @@ enum Module {
     },
     FlipFlop {
         name: String,
-        is_on: bool,
+        is_on: Vec<bool>,
         outputs: Vec<String>,
     },
     Conjunction {
@@ -143,7 +143,7 @@ fn parse_input(input: String) -> ModuleCatalog {
         if prefix == "%" {
             return Some(Module::FlipFlop {
                 name,
-                is_on: false,
+                is_on: Vec::from([false]),
                 outputs,
             });
         }
@@ -239,16 +239,17 @@ fn signal_at_module(signal: &Signal, module: &mut Module) -> Vec<Signal> {
         }
         Module::FlipFlop {
             name,
-            mut is_on,
+            is_on,
             outputs,
         } => {
             if signal.signal_type.is_high() {
                 return Vec::new();
             }
 
-            is_on = !is_on;
+            let next_is_on = !is_on.first().unwrap_or(&false);
+            is_on[0] = next_is_on;
 
-            let signal_type = if is_on {
+            let signal_type = if next_is_on {
                 SignalType::High
             } else {
                 SignalType::Low
