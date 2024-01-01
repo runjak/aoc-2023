@@ -117,17 +117,23 @@ fn reachable_in_steps(input: &InputMap, steps: usize) -> HashSet<Position> {
     let mut matrix = matrix_container.matrix.clone();
 
     let mut steps = steps;
+    let mut shifts: Vec<bool> = Vec::new();
     while steps > 1 {
-        matrix = matrix.dot(&matrix_container.matrix);
-        steps -= 1;
+        if steps % 2 == 1 {
+            shifts.push(false);
+            steps -= 1;
+        } else {
+            shifts.push(true);
+            steps /= 2;
+        }
+    }
 
-        // if steps % 2 == 1 {
-        //     matrix = matrix.dot(&matrix_container.matrix);
-        //     steps -= 1;
-        // } else {
-        //     matrix = matrix.dot(&matrix);
-        //     steps /= 2;
-        // }
+    while let Some(do_shift) = shifts.pop() {
+        if do_shift {
+            matrix = matrix.dot(&matrix);
+        } else {
+            matrix = matrix.dot(&matrix_container.matrix);
+        }
     }
 
     let Some(start_position) = input
