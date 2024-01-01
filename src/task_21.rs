@@ -2,9 +2,8 @@ use std::{
     collections::{HashMap, HashSet},
     error::Error,
     fs,
+    io::{stdout, Write},
 };
-
-use ndarray::{Array, Ix1, Ix2};
 
 #[derive(Debug, PartialEq, PartialOrd)]
 enum TileType {
@@ -40,12 +39,12 @@ fn parse_input_map(input: String) -> InputMap {
         .collect()
 }
 
-type ConnectionMap = HashMap<Position, Vec<Position>>;
+type ConnectionMap = HashMap<Position, HashSet<Position>>;
 
 fn input_map_to_connection_map(input: &InputMap) -> ConnectionMap {
     input
         .keys()
-        .map(|(x, y)| -> (Position, Vec<Position>) {
+        .map(|(x, y)| -> (Position, HashSet<Position>) {
             let position = (*x, *y);
 
             let adjacent = [(x + 1, *y), (x - 1, *y), (*x, y + 1), (*x, y - 1)];
@@ -67,54 +66,29 @@ fn input_map_to_connection_map(input: &InputMap) -> ConnectionMap {
         .collect()
 }
 
-type Vector = Array<u32, Ix1>;
-type Matrix = Array<u32, Ix2>;
+fn combine_connection_maps(a: &ConnectionMap, b: &ConnectionMap) -> ConnectionMap {
+    a.iter()
+        .map(|(from, to_bs)| -> (Position, HashSet<Position>) {
+            let from = *from;
+            let to = to_bs
+                .iter()
+                .flat_map(|to| -> HashSet<Position> {
+                    let Some(targets) = b.get(to) else {
+                        return HashSet::new();
+                    };
 
-struct MatrixContainer {
-    index_to_position: HashMap<usize, Position>,
-    position_to_index: HashMap<Position, usize>,
-    matrix: Matrix,
-}
+                    targets.clone()
+                })
+                .collect::<HashSet<_>>();
 
-fn connection_map_to_matrix(connection_map: &ConnectionMap) -> MatrixContainer {
-    let index_to_position = connection_map
-        .keys()
-        .enumerate()
-        .map(|(index, position)| -> (usize, Position) { (index, *position) })
-        .collect::<HashMap<_, _>>();
-
-    let position_to_index = index_to_position
-        .iter()
-        .map(|(index, position)| (*position, *index))
-        .collect::<HashMap<_, _>>();
-
-    let mut matrix: Matrix = Array::zeros((index_to_position.len(), index_to_position.len()));
-
-    for (from_index, from_position) in index_to_position.iter() {
-        let Some(to_positions) = connection_map.get(from_position) else {
-            continue;
-        };
-
-        for to_position in to_positions {
-            let Some(to_index) = position_to_index.get(to_position) else {
-                continue;
-            };
-
-            matrix[(*from_index, *to_index)] = 1;
-        }
-    }
-
-    MatrixContainer {
-        index_to_position,
-        position_to_index,
-        matrix,
-    }
+            (from, to)
+        })
+        .collect()
 }
 
 fn reachable_in_steps(input: &InputMap, steps: usize) -> HashSet<Position> {
     let connection_map = input_map_to_connection_map(input);
-    let matrix_container = connection_map_to_matrix(&connection_map);
-    let mut matrix = matrix_container.matrix.clone();
+    let mut transition_map = connection_map.clone();
 
     let mut steps = steps;
     let mut shifts: Vec<bool> = Vec::new();
@@ -129,10 +103,12 @@ fn reachable_in_steps(input: &InputMap, steps: usize) -> HashSet<Position> {
     }
 
     while let Some(do_shift) = shifts.pop() {
+        print!(".");
+        let _ = stdout().flush();
         if do_shift {
-            matrix = matrix.dot(&matrix);
+            transition_map = combine_connection_maps(&transition_map, &transition_map);
         } else {
-            matrix = matrix.dot(&matrix_container.matrix);
+            transition_map = combine_connection_maps(&transition_map, &connection_map);
         }
     }
 
@@ -145,29 +121,11 @@ fn reachable_in_steps(input: &InputMap, steps: usize) -> HashSet<Position> {
         return HashSet::new();
     };
 
-    let Some(start_index) = matrix_container.position_to_index.get(&start_position) else {
+    let Some(reachable) = transition_map.get(&start_position) else {
         return HashSet::new();
     };
 
-    let mut start_index_vector: Vector = Array::zeros(matrix_container.index_to_position.len());
-    start_index_vector[*start_index] = 1;
-
-    let reachable_index_vector: Vector = start_index_vector.dot(&matrix);
-
-    reachable_index_vector
-        .iter()
-        .enumerate()
-        .filter_map(|(reachable_index, value)| -> Option<Position> {
-            if *value < 1 {
-                return None;
-            }
-
-            matrix_container
-                .index_to_position
-                .get(&reachable_index)
-                .copied()
-        })
-        .collect()
+    reachable.clone()
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
