@@ -28,7 +28,8 @@ struct Signal {
 }
 
 impl Signal {
-    #[must_use]
+    // No must_use, bc it's used in tests
+    #[allow(dead_code)]
     fn to_string(&self) -> String {
         let signal_label = if self.signal_type.is_high() {
             "-high->".to_string()
@@ -299,24 +300,39 @@ fn trigger_button(modules: &mut ModuleCatalog) -> Vec<Signal> {
     seen_signals
 }
 
+fn trigger_1000_times_and_score(modules: &mut ModuleCatalog) -> u64 {
+    let mut high_count: u64 = 0;
+    let mut low_count: u64 = 0;
+
+    for _ in 0..1_000 {
+        let seen_signals = trigger_button(modules);
+
+        for signal in seen_signals {
+            if signal.signal_type.is_high() {
+                high_count += 1;
+            } else {
+                low_count += 1;
+            }
+        }
+    }
+
+    high_count * low_count
+}
+
 fn first() -> Result<(), Box<dyn Error>> {
     let paths = [
         "./inputs/20/example-1.txt",
         "./inputs/20/example-2.txt",
-        // "./inputs/20/input.txt",
+        "./inputs/20/input.txt",
     ];
 
     for path in paths {
         let input = fs::read_to_string(path)?;
         let mut input = parse_input(input);
 
-        println!("Parsed input:\n{:?}", input);
+        let score = trigger_1000_times_and_score(&mut input);
 
-        let seen_signals = trigger_button(&mut input);
-
-        for signal in seen_signals {
-            println!("{}", signal.to_string());
-        }
+        println!("Score for {}: {}", path, score);
     }
 
     Ok(())
