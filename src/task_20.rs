@@ -338,8 +338,35 @@ fn first() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn count_presses_for_rx_low(input: &mut ModuleCatalog) -> u64 {
+    let mut count = 0;
+
+    let mut running = true;
+
+    while running {
+        count += 1;
+
+        for signal in trigger_button(input).iter() {
+            if signal.to == "rx" && !signal.signal_type.is_high() {
+                running = false;
+            }
+        }
+    }
+
+    count
+}
+
 fn second() -> Result<(), Box<dyn Error>> {
-    println!("To be implemented");
+    let paths = ["./inputs/20/input.txt"];
+
+    for path in paths {
+        let input = fs::read_to_string(path)?;
+        let mut input = parse_input(input);
+
+        let score = count_presses_for_rx_low(&mut input);
+
+        println!("Button presses for {}: {}", path, score);
+    }
 
     Ok(())
 }
