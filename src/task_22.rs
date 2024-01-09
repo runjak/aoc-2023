@@ -1,4 +1,8 @@
-use std::{error::Error, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fs,
+};
 
 type N = i32;
 type XYZ = (N, N, N);
@@ -44,6 +48,56 @@ fn into_cubes(brick: &InputBrick) -> BrickOfCubes {
     }
 
     cubes
+}
+
+fn max_z(brick: &BrickOfCubes) -> N {
+    brick.iter().map(|(_, _, z)| *z).max().unwrap_or(0)
+}
+
+fn min_z(brick: &BrickOfCubes) -> N {
+    brick.iter().map(|(_, _, z)| *z).min().unwrap_or(0)
+}
+
+type XY = (N, N);
+
+fn project_xy(brick: &BrickOfCubes) -> HashSet<XY> {
+    brick.iter().map(|(x, y, _)| (*x, *y)).collect()
+}
+
+fn count_safe_to_disintegrate(bricks: &Vec<InputBrick>) -> N {
+    let bricks = bricks.iter().map(into_cubes).collect::<Vec<_>>();
+
+    let mut xy_to_brick_index: HashMap<XY, Vec<usize>> = HashMap::new();
+    for (brick_index, brick) in bricks.iter().enumerate() {
+        for xy in project_xy(&brick) {
+            match xy_to_brick_index.get_mut(&xy) {
+                Some(brick_indices) => {
+                    brick_indices.push(brick_index);
+                }
+                None => {
+                    xy_to_brick_index.insert(xy, Vec::from([brick_index]));
+                }
+            }
+        }
+    }
+
+    for (brick_index, brick) in bricks.iter().enumerate() {
+        let related_bricks = project_xy(&brick)
+            .iter()
+            .flat_map(|xy| -> Vec<&BrickOfCubes> {
+                let Some(related_indices) = xy_to_brick_index.get(xy) else {
+                    return Vec::new();
+                };
+
+                related_indices
+                    .iter()
+                    .filter_map(|index| bricks.get(*index))
+                    .collect()
+            })
+            .collect::<HashSet<_>>();
+    }
+
+    todo!("Rest of the owl")
 }
 
 fn first() -> Result<(), Box<dyn Error>> {
